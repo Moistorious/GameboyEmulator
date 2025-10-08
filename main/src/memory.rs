@@ -10,9 +10,11 @@ impl GbMemory {
             memory: [0; 8 * 1024],
         }
     }
+    
     pub fn read_u8(&self, address: u16) -> u8 {
         return self.memory[address as usize];
     }
+    
     pub fn read_u16(&self, address: u16) -> u16 {
         return BigEndian::read_u16(&self.memory[address as usize..(address + 2) as usize]);
     }
