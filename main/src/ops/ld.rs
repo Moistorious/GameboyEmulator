@@ -2,7 +2,7 @@ use crate::cpu::{Reg8, Reg16};
 use crate::gameboy::Gameboy;
 
 impl Gameboy {
-    pub fn ld(&mut self, opcode: u8) {
+    pub fn ld(&mut self, opcode: u8, ) {
         match opcode {
             // LD r,(HL)
             0x46 | 0x4E | 0x56 | 0x5E | 0x66 | 0x6E | 0x7E => self.ld_r_hl(opcode),
@@ -51,8 +51,7 @@ impl Gameboy {
     }
 
     fn ld_r_r(&mut self, opcode: u8) {
-        let dest = ((opcode >> 3) & 0x07) as u8;
-        let src = (opcode & 0x07) as u8;
+        let (_, dest, src) = self.decode_opcode(opcode);
 
         if dest == 6 && src == 6 {
             // LD (HL),(HL) is actually HALT, not LD
@@ -76,12 +75,11 @@ impl Gameboy {
     }
 
     fn ld_r_n(&mut self, opcode: u8) {
-        let dest = ((opcode >> 3) & 0x07) as u8;
+        let (_, dest, _) = self.decode_opcode(opcode);
         let imm = self.read_u8_increment_pc();
 
         if dest == 6 {
-            let addr = self.cpu.reg16(Reg16::HL);
-            self.memory.write_u8(addr, imm);
+            self.memory.write_u8(self.cpu.reg16(Reg16::HL), imm);
         } else {
             self.cpu.write_reg8(Reg8::from_u8(dest), imm);
         }
@@ -89,20 +87,15 @@ impl Gameboy {
 
     fn ld_r_hl(&mut self, opcode: u8) {
         // opcode format: 01ddd110, where ddd is the destination register
-        let dest = ((opcode >> 3) & 0x07) as u8;
-        let addr = self.cpu.hl();
-        let value = self.memory.read_u8(addr);
-
-        self.cpu.write_reg8(Reg8::from_u8(dest), value);
+        let (_, dest, _) = self.decode_opcode(opcode);
+        self.cpu.write_reg8(Reg8::from_u8(dest), 
+                          self.memory.read_u8(self.cpu.hl()));
     }
 
     fn ld_hl_r(&mut self, opcode: u8) {
-        
-        let src = (opcode & 0x07) as u8;
-        let addr = self.cpu.reg16(Reg16::HL);
-
-        let value = self.cpu.reg8(Reg8::from_u8(src));
-        self.memory.write_u8(addr, value);
+        let (_, _, source) = self.decode_opcode(opcode);
+        self.memory.write_u8(self.cpu.reg16(Reg16::HL), 
+                               self.cpu.reg8(Reg8::from_u8(source)));
     }
 
     fn ld_a_rr(&mut self, rr: Reg16) {

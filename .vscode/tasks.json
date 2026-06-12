@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cargo build",
+      "type": "shell",
+      "command": "cargo build --package main",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"],
+      "detail": "Build the Rust gameboy emulator crate."
+    },
+    {
+      "label": "cargo test",
+      "type": "shell",
+      "command": "cargo test --package main",
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "detail": "Run tests for the main Rust crate."
+    },
+    {
+      "label": "cargo run",
+      "type": "shell",
+      "command": "cargo run --package main",
+      "group": "none",
+      "problemMatcher": ["$rustc"],
+      "detail": "Run the emulator from VS Code."
+    }
+  ]
+}

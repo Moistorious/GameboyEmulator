@@ -9,7 +9,7 @@ impl Gameboy {
         let a_before = self.cpu.a;
         let result = f(self.cpu.a, value);
         if let AluOp::Cp = op {
-            self.cpu.set_flags(result == 0,false, false);
+            self.cpu.set_flags(result == 0,false, false, false);
         }else {
             self.cpu.a = result;
            // self.cpu.set_flags()

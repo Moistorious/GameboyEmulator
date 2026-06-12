@@ -1,5 +1,3 @@
-use byteorder::{BigEndian, ByteOrder};
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum Reg8 {
