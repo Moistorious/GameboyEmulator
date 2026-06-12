@@ -169,6 +169,49 @@ mod ld_tests {
             assert_eq!(gb.memory.read_u8(0x1FFF), 0x66, "LD ({:?}),A failed", pair);
         }
     }
+    const LD_HLI_A: u8 = 0x22; // LD (HL+), A
+    const LD_HLD_A: u8 = 0x32; // LD (HL-), A
+    #[test]
+    fn test_ld_hli_a_stores_a_and_increments_hl() {
+        let mut gb = Gameboy::new();
+
+        // Setup registers
+        gb.cpu.a = 0xAB;
+        gb.cpu.h = 0xC0;
+        gb.cpu.l = 0x00;
+        let hl_before = gb.cpu.hl();
+
+        // Execute
+        gb.ld(LD_HLI_A);
+
+        // Check that A was written to memory at address HL
+        let written = gb.memory.read_u8(hl_before);
+        assert_eq!(written, 0xAB, "Memory at HL should contain A’s value");
+
+        // Check that HL incremented
+        assert_eq!(gb.cpu.hl(), hl_before + 1, "HL should have incremented by 1");
+    }
+
+    #[test]
+    fn test_ld_hld_a_stores_a_and_decrements_hl() {
+        let mut gb = Gameboy::new();
+
+        // Setup registers
+        gb.cpu.a = 0xAB;
+        gb.cpu.h = 0xC0;
+        gb.cpu.l = 0x10;
+        let hl_before = gb.cpu.hl();
+
+        // Execute
+        gb.ld(LD_HLD_A);
+
+        // Check that A was written to memory at address HL
+        let written = gb.memory.read_u8(hl_before);
+        assert_eq!(written, 0xAB, "Memory at HL should contain A’s value");
+
+        // Check that HL decremented
+        assert_eq!(gb.cpu.hl(), hl_before - 1, "HL should have decremented by 1");
+    }
 
     // You’d then continue with LD A,(nn), LD (nn),A, LD A,(C), LD (C),A, etc.
 }

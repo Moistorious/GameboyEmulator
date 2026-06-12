@@ -8,6 +8,6 @@ impl Gameboy {
         let source_value = self.cpu.reg8(source_register);
         let bit = (opcode >> 3) & 0x07;
 
-        self.cpu.set_flags((source_value >> bit) & 0x01 == 0, false, true);
+        self.cpu.set_flags((source_value >> bit) & 0x01 == 0, false, true,false);
     }
 }

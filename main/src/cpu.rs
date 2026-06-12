@@ -45,7 +45,13 @@ pub enum Reg16 {
     HL = 4,
     AF = 6,
 }
-
+#[derive(Clone, Copy, Debug)]
+pub enum AluOp {
+    And,
+    Or,
+    Xor,
+    Cp,
+}
 pub struct Gbz80 {
     pub b: u8,
     pub c: u8,
@@ -60,9 +66,10 @@ pub struct Gbz80 {
 }
 
 impl Gbz80 {
-    pub const FLAG_Z: u8 = 1 << 7;
-    pub const FLAG_N: u8 = 1 << 6;
-    pub const FLAG_H: u8 = 1 << 5;
+    pub const FLAG_Z: u8 = 1 << 7; // Zero Flag
+    pub const FLAG_N: u8 = 1 << 6; // Subtract Flag
+    pub const FLAG_H: u8 = 1 << 5; // Half Carry Flag
+    pub const FLAG_C: u8 = 1 << 4; // Carry Flag
 
     pub fn new() -> Self {
         Gbz80 {
@@ -79,10 +86,11 @@ impl Gbz80 {
         }
     }
 
-    pub fn set_flags(&mut self, z: bool, n: bool, h: bool) {
+    pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
         self.set_flag(Self::FLAG_Z, z);
         self.set_flag(Self::FLAG_N, n);
         self.set_flag(Self::FLAG_H, h);
+        self.set_flag(Self::FLAG_C, c);
     }
 
     pub fn bc(&self) -> u16 {
@@ -123,7 +131,7 @@ impl Gbz80 {
         if value {
             self.write_reg8(Reg8::F, self.reg8(Reg8::F) | flag);
         }else{
-            self.write_reg8(Reg8::F, self.reg8(Reg8::F) & flag);
+            self.write_reg8(Reg8::F, self.reg8(Reg8::F) & !flag);
         }
     }
 
