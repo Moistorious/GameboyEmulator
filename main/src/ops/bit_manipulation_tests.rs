@@ -46,6 +46,11 @@ mod bit_manipulation_tests {
         gb.memory.write_u8(0xC000, 0x00);
         gb.set(0xDE);
         assert_eq!(gb.memory.read_u8(0xC000), 0x08);
+
+        // SET does not modify any flags
+        gb.cpu.f = 0xF0;
+        gb.set(0xC0);
+        assert_eq!(gb.cpu.f, 0xF0);
     }
 
     #[test]
@@ -66,5 +71,10 @@ mod bit_manipulation_tests {
         gb.memory.write_u8(0xC000, 0xFF);
         gb.res(0x9E);
         assert_eq!(gb.memory.read_u8(0xC000), 0xF7);
+
+        // RES does not modify any flags
+        gb.cpu.f = 0xF0;
+        gb.res(0x80);
+        assert_eq!(gb.cpu.f, 0xF0);
     }
 }

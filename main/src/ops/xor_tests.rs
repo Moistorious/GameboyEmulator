@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod ld_tests {
-    use crate::cpu::{Reg8, Reg16};
+    use crate::cpu::{Reg8, Reg16, Gbz80};
     use crate::gameboy::Gameboy;
     fn xor_opcode(src: Reg8) -> u8 {
         0xA8 | (src as u8)
@@ -21,6 +21,11 @@ mod ld_tests {
             0x00,
             "XOR A,A (opcode 0xAF) failed"
         );
+        // result is zero: Z=1, N=0, H=0, C=0
+        assert!(gameboy.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
     }
     #[test]
     fn test_xor_a_u8() {
@@ -38,6 +43,10 @@ mod ld_tests {
             0xAA,
             "XOR A,(HL) (opcode 0xEE) failed"
         );
+        assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -57,6 +66,10 @@ mod ld_tests {
             0xAA,
             "XOR A,(HL) (opcode 0xAE) failed"
         );
+        assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -82,6 +95,26 @@ mod ld_tests {
                 src,
                 opcode
             );
+            assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+            assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
+            assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
+            assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
         }
+    }
+
+    #[test]
+    fn test_xor_zero_result() {
+        let mut gameboy = Gameboy::new();
+
+        gameboy.cpu.write_reg8(Reg8::A, 0xF0);
+        gameboy.cpu.write_reg8(Reg8::B, 0xF0);
+
+        gameboy.xor(0xA8); // XOR A, B
+
+        assert_eq!(gameboy.cpu.reg8(Reg8::A), 0x00);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
     }
 }

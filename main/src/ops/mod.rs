@@ -5,6 +5,7 @@ mod xor;
 mod xor_tests;
 mod bit;
 mod or;
+mod or_tests;
 mod alu;
 
 pub mod arithmetic;

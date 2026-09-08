@@ -21,6 +21,11 @@ mod arithmetic_tests {
                 gb.add(opcode);
                 assert_eq!(gb.cpu.a, 0x30);
             }
+            // 0x10 + 0x20 = 0x30 (or 0x20 for A): no zero, no half-carry, no carry
+            assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+            assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+            assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+            assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
         }
     }
 
@@ -34,6 +39,10 @@ mod arithmetic_tests {
         gb.add(0x86); // ADD A, (HL)
         
         assert_eq!(gb.cpu.a, 0x1A);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -46,6 +55,10 @@ mod arithmetic_tests {
         gb.add(0xC6); // ADD A, n
         
         assert_eq!(gb.cpu.a, 0x35);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -83,6 +96,10 @@ mod arithmetic_tests {
         gb.adc(0x88); // ADC A, B
         
         assert_eq!(gb.cpu.a, 0x31);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -94,7 +111,10 @@ mod arithmetic_tests {
         gb.sub(0x90); // SUB A, B
         
         assert_eq!(gb.cpu.a, 0x20);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -131,6 +151,10 @@ mod arithmetic_tests {
         gb.sbc(0x98); // SBC A, B
         
         assert_eq!(gb.cpu.a, 0x1F);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -144,6 +168,8 @@ mod arithmetic_tests {
         assert_eq!(gb.cpu.a, 0x30); // A should remain unchanged
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -156,6 +182,8 @@ mod arithmetic_tests {
         
         assert_eq!(gb.cpu.hl(), 0x1234);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -170,5 +198,7 @@ mod arithmetic_tests {
         assert_eq!(gb.cpu.stack_pointer, 0x1002);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 }

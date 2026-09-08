@@ -15,6 +15,7 @@ mod misc_tests {
         assert_eq!(gb.cpu.a, 0x42);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
 
         // 0x45 + 0x55 = 0x9A -> 0x00, C=1
         gb.cpu.a = 0x9A;
@@ -30,6 +31,10 @@ mod misc_tests {
         gb.cpu.set_flags(false, true, true, false); // Z=0, N=1, H=1, C=0
         gb.daa(1 as u8);
         assert_eq!(gb.cpu.a, 0x15);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N != 0); // N is preserved by DAA
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
 
     #[test]
@@ -40,6 +45,12 @@ mod misc_tests {
         assert_eq!(gb.cpu.a, 0xCA);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+        // CPL preserves Z and C
+        gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+        gb.cpu.set_flag(Gbz80::FLAG_C, true);
+        gb.cpl(1 as u8);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     }
 
     #[test]
@@ -52,6 +63,7 @@ mod misc_tests {
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
     }
 
     #[test]
@@ -64,6 +76,7 @@ mod misc_tests {
         assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
 
         gb.ccf(1 as u8);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);

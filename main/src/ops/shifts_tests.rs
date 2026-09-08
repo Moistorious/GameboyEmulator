@@ -15,7 +15,6 @@ mod shifts_tests {
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-
         // RLC B (0x00)
         gb.cpu.b = 0x00;
         gb.rlc(0x00);
@@ -41,6 +40,8 @@ mod shifts_tests {
         assert_eq!(gb.cpu.a, 0x80);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // RRC (HL) (0x0E)
         gb.cpu.set_hl(0xC000);
@@ -48,6 +49,9 @@ mod shifts_tests {
         gb.rrc(0x0E);
         assert_eq!(gb.memory.read_u8(0xC000), 0x40);
         assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 
     #[test]
@@ -61,6 +65,8 @@ mod shifts_tests {
         assert_eq!(gb.cpu.a, 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // RL (HL) (0x16)
         gb.cpu.set_hl(0xC000);
@@ -69,6 +75,9 @@ mod shifts_tests {
         gb.rl(0x16);
         assert_eq!(gb.memory.read_u8(0xC000), 0x23);
         assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 
     #[test]
@@ -82,6 +91,8 @@ mod shifts_tests {
         assert_eq!(gb.cpu.a, 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // RR (HL) (0x1E)
         gb.cpu.set_hl(0xC000);
@@ -90,6 +101,9 @@ mod shifts_tests {
         gb.rr(0x1E);
         assert_eq!(gb.memory.read_u8(0xC000), 0xC4);
         assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 
     #[test]
@@ -101,6 +115,8 @@ mod shifts_tests {
         assert_eq!(gb.cpu.a, 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // SLA (HL) (0x26)
         gb.cpu.set_hl(0xC000);
@@ -108,6 +124,9 @@ mod shifts_tests {
         gb.sla(0x26);
         assert_eq!(gb.memory.read_u8(0xC000), 0xFE);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 
     #[test]
@@ -118,6 +137,9 @@ mod shifts_tests {
         gb.sra(0x2F);
         assert_eq!(gb.cpu.a, 0xC0);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // SRA (HL) (0x2E)
         gb.cpu.set_hl(0xC000);
@@ -126,6 +148,8 @@ mod shifts_tests {
         assert_eq!(gb.memory.read_u8(0xC000), 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 
     #[test]
@@ -136,12 +160,22 @@ mod shifts_tests {
         gb.swap(0x37);
         assert_eq!(gb.cpu.a, 0x0F);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
         
         // SWAP (HL) (0x36)
         gb.cpu.set_hl(0xC000);
         gb.memory.write_u8(0xC000, 0x12);
         gb.swap(0x36);
         assert_eq!(gb.memory.read_u8(0xC000), 0x21);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+
+        // SWAP producing zero
+        gb.cpu.a = 0x00;
+        gb.swap(0x37);
+        assert_eq!(gb.cpu.a, 0x00);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
     }
 
     #[test]
@@ -152,6 +186,9 @@ mod shifts_tests {
         gb.srl(0x3F);
         assert_eq!(gb.cpu.a, 0x40);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
 
         // SRL (HL) (0x3E)
         gb.cpu.set_hl(0xC000);
@@ -160,5 +197,7 @@ mod shifts_tests {
         assert_eq!(gb.memory.read_u8(0xC000), 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
     }
 }

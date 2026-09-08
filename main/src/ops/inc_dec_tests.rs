@@ -11,6 +11,7 @@ mod inc_dec_tests {
         gb.inc(0x04); // INC B
         
         assert_eq!(gb.cpu.b, 0x10);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H != 0); // Half carry
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     }
@@ -25,6 +26,7 @@ mod inc_dec_tests {
         assert_eq!(gb.cpu.b, 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     }
 
     #[test]
@@ -36,6 +38,9 @@ mod inc_dec_tests {
         gb.inc(0x34); // INC (HL)
         
         assert_eq!(gb.memory.read_u8(0xC000), 0x51);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     }
 
     #[test]
@@ -58,6 +63,7 @@ mod inc_dec_tests {
         gb.dec(0x05); // DEC B
         
         assert_eq!(gb.cpu.b, 0x0F);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_H != 0); // Half borrow
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
     }
@@ -71,6 +77,7 @@ mod inc_dec_tests {
         
         assert_eq!(gb.cpu.b, 0x00);
         assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
     }
 
