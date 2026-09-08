@@ -1,45 +1,90 @@
 use crate::cpu::Gbz80;
 use crate::gameboy::Gameboy;
 
+// JP nn     = 0xC3
+// JP cc,nn  = 0xC2 NZ, 0xCA Z, 0xD2 NC, 0xDA C
+// JP HL     = 0xE9
+// JR n      = 0x18
+// JR cc,n   = 0x20 NZ, 0x28 Z, 0x30 NC, 0x38 C
+// CALL nn   = 0xCD
+// CALL cc,nn = 0xC4 NZ, 0xCC Z, 0xD4 NC, 0xDC C
+// RET       = 0xC9
+// RET cc    = 0xC0 NZ, 0xC8 Z, 0xD0 NC, 0xD8 C
+// RETI      = 0xD9
+// RST       = 0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF
+
 #[test]
 fn test_jp_nn() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u16(0x101, 0x1234);
-    
-    gb.jp(0xC3); // JP nn
-    
+    gb.jp(0xC3);
     assert_eq!(gb.cpu.program_counter, 0x1234);
 }
 
 #[test]
-fn test_jp_cc_nn() {
+fn test_jp_cc_nn_taken() {
+    // NZ taken when Z clear
     let mut gb = Gameboy::new();
-    
-    // NZ condition, Zero flag is NOT set
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u16(0x101, 0x1234);
     gb.cpu.set_flag(Gbz80::FLAG_Z, false);
-    gb.jp(0xC2); // JP NZ, nn
+    gb.jp(0xC2);
     assert_eq!(gb.cpu.program_counter, 0x1234);
+}
 
-    // NZ condition, Zero flag IS set -> No jump
+#[test]
+fn test_jp_cc_nn_not_taken() {
+    // NZ not taken when Z set; PC advances past 3-byte operand
+    let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
+    gb.memory.write_u16(0x101, 0x1234);
     gb.cpu.set_flag(Gbz80::FLAG_Z, true);
-    gb.jp(0xC2); // JP NZ, nn
-    // JP nn is 3 bytes, if no jump, PC should be at 0x103
+    gb.jp(0xC2);
     assert_eq!(gb.cpu.program_counter, 0x103);
+}
+
+#[test]
+fn test_jp_z_c_nc_conditions() {
+    // Z: taken when Z set
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x100;
+    gb.memory.write_u16(0x101, 0x2222);
+    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.jp(0xCA);
+    assert_eq!(gb.cpu.program_counter, 0x2222);
+
+    // C: taken when C set
+    let mut gb2 = Gameboy::new();
+    gb2.cpu.program_counter = 0x100;
+    gb2.memory.write_u16(0x101, 0x3333);
+    gb2.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb2.jp(0xDA);
+    assert_eq!(gb2.cpu.program_counter, 0x3333);
+
+    // NC: taken when C clear
+    let mut gb3 = Gameboy::new();
+    gb3.cpu.program_counter = 0x100;
+    gb3.memory.write_u16(0x101, 0x4444);
+    gb3.cpu.set_flag(Gbz80::FLAG_C, false);
+    gb3.jp(0xD2);
+    assert_eq!(gb3.cpu.program_counter, 0x4444);
+}
+
+#[test]
+fn test_jp_hl() {
+    let mut gb = Gameboy::new();
+    gb.cpu.set_hl(0xABCD);
+    gb.jp(0xE9);
+    assert_eq!(gb.cpu.program_counter, 0xABCD);
 }
 
 #[test]
 fn test_jr_n() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x05); // JR +5
-    
+    gb.memory.write_u8(0x101, 0x05);
     gb.jr(0x18);
-    
-    // JR is 2 bytes, so PC becomes 0x102 + 5 = 0x107
     assert_eq!(gb.cpu.program_counter, 0x107);
 }
 
@@ -47,12 +92,28 @@ fn test_jr_n() {
 fn test_jr_n_negative() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0xFB as u8); // JR -5 (0xFB is -5 in 2's complement)
-    
+    gb.memory.write_u8(0x101, 0xFB); // -5
     gb.jr(0x18);
-    
-    // JR is 2 bytes, so PC becomes 0x102 - 5 = 0x0FD
     assert_eq!(gb.cpu.program_counter, 0x0FD);
+}
+
+#[test]
+fn test_jr_cc_taken_and_not() {
+    // JR NZ,n taken
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x100;
+    gb.memory.write_u8(0x101, 0x03);
+    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb.jr(0x20);
+    assert_eq!(gb.cpu.program_counter, 0x105);
+
+    // JR NZ,n not taken
+    let mut gb2 = Gameboy::new();
+    gb2.cpu.program_counter = 0x100;
+    gb2.memory.write_u8(0x101, 0x03);
+    gb2.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb2.jr(0x20);
+    assert_eq!(gb2.cpu.program_counter, 0x102);
 }
 
 #[test]
@@ -61,12 +122,34 @@ fn test_call_nn() {
     gb.cpu.program_counter = 0x100;
     gb.cpu.stack_pointer = 0xFFFE;
     gb.memory.write_u16(0x101, 0x1234);
-    
-    gb.call(0xCD); // CALL nn
-    
+    gb.call(0xCD);
     assert_eq!(gb.cpu.program_counter, 0x1234);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
-    assert_eq!(gb.memory.read_u16(0xFFFC), 0x103); // Return address pushed
+    assert_eq!(gb.memory.read_u16(0xFFFC), 0x103);
+}
+
+#[test]
+fn test_call_cc_taken() {
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x100;
+    gb.cpu.stack_pointer = 0xFFFE;
+    gb.memory.write_u16(0x101, 0x1234);
+    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb.call(0xC4); // CALL NZ
+    assert_eq!(gb.cpu.program_counter, 0x1234);
+    assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
+}
+
+#[test]
+fn test_call_cc_not_taken() {
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x100;
+    gb.cpu.stack_pointer = 0xFFFE;
+    gb.memory.write_u16(0x101, 0x1234);
+    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.call(0xC4); // CALL NZ
+    assert_eq!(gb.cpu.program_counter, 0x103);
+    assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
 }
 
 #[test]
@@ -74,44 +157,53 @@ fn test_ret() {
     let mut gb = Gameboy::new();
     gb.cpu.stack_pointer = 0xFFFC;
     gb.memory.write_u16(0xFFFC, 0x103);
-    
-    gb.ret(0xC9); // RET
-    
+    gb.ret(0xC9);
     assert_eq!(gb.cpu.program_counter, 0x103);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
 }
 
 #[test]
-fn test_ret_cc() {
+fn test_ret_cc_taken_and_not() {
+    // RET Z taken
     let mut gb = Gameboy::new();
-    
-    // Z condition, Zero flag IS set
-    gb.cpu.program_counter = 0x200;
     gb.cpu.stack_pointer = 0xFFFC;
     gb.memory.write_u16(0xFFFC, 0x1234);
     gb.cpu.set_flag(Gbz80::FLAG_Z, true);
-    gb.ret(0xC8); // RET Z
+    gb.ret(0xC8);
     assert_eq!(gb.cpu.program_counter, 0x1234);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
 
-    // Z condition, Zero flag is NOT set -> No ret
-    gb.cpu.program_counter = 0x200;
+    // RET Z not taken: 1-byte opcode
+    let mut gb2 = Gameboy::new();
+    gb2.cpu.program_counter = 0x200;
+    gb2.cpu.stack_pointer = 0xFFFC;
+    gb2.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb2.ret(0xC8);
+    assert_eq!(gb2.cpu.program_counter, 0x201);
+    assert_eq!(gb2.cpu.stack_pointer, 0xFFFC);
+}
+
+#[test]
+fn test_reti() {
+    let mut gb = Gameboy::new();
     gb.cpu.stack_pointer = 0xFFFC;
-    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
-    gb.ret(0xC8); // RET Z
-    assert_eq!(gb.cpu.program_counter, 0x201); // RET cc is 1 byte
-    assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
+    gb.memory.write_u16(0xFFFC, 0x300);
+    gb.reti(0xD9);
+    assert_eq!(gb.cpu.program_counter, 0x300);
+    assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
 }
 
 #[test]
 fn test_rst() {
-    let mut gb = Gameboy::new();
-    gb.cpu.program_counter = 0x100;
-    gb.cpu.stack_pointer = 0xFFFE;
-    
-    gb.rst(0xCF); // RST 08h
-    
-    assert_eq!(gb.cpu.program_counter, 0x0008);
-    assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
-    assert_eq!(gb.memory.read_u16(0xFFFC), 0x101); // RST is 1 byte
+    let vectors = [0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38];
+    let opcodes = [0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF];
+    for (&opcode, &vec) in opcodes.iter().zip(vectors.iter()) {
+        let mut gb = Gameboy::new();
+        gb.cpu.program_counter = 0x100;
+        gb.cpu.stack_pointer = 0xFFFE;
+        gb.rst(opcode);
+        assert_eq!(gb.cpu.program_counter, vec, "RST 0x{:02X} failed", opcode);
+        assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
+        assert_eq!(gb.memory.read_u16(0xFFFC), 0x101, "RST push failed");
+    }
 }

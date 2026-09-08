@@ -1,4 +1,4 @@
-use crate::cpu::{Reg16, Reg8};
+use crate::cpu::{Reg16, Reg8, Gbz80};
 use crate::gameboy::Gameboy;
 
 fn ld_opcode(dest: Reg8, src: Reg8) -> u8 {
@@ -357,8 +357,11 @@ fn test_ld_hl_sp_e8() {
 
         assert_eq!(gb.cpu.hl(), 0x1010);
         assert_eq!(gb.cpu.program_counter, 1);
-        // check flags (Z=0, N=0, H=0, C=0)
-        assert_eq!(gb.cpu.reg8(Reg8::F) & 0xF0, 0);
+        // flags: Z=0, N=0, H=0, C=0
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
     }
     // Negative offset
     {
@@ -371,7 +374,40 @@ fn test_ld_hl_sp_e8() {
 
         assert_eq!(gb.cpu.hl(), 0x0FF0);
         assert_eq!(gb.cpu.program_counter, 1);
+        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     }
+}
+
+#[test]
+fn test_ld_hl_sp_e8_flags() {
+    // Half carry: SP + e8 where low nibbles carry. 0x000F + 0x01 = 0x0010 -> H=1
+    let mut gb = Gameboy::new();
+    gb.cpu.stack_pointer = 0x000F;
+    gb.cpu.program_counter = 0;
+    gb.memory.write_u8(0, 0x01);
+    gb.ld(0xF8);
+    assert_eq!(gb.cpu.hl(), 0x0010);
+    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+
+    // Carry: 0xFFFF + 0x01 = 0x0000 -> C=1
+    let mut gb2 = Gameboy::new();
+    gb2.cpu.stack_pointer = 0xFFFF;
+    gb2.cpu.program_counter = 0;
+    gb2.memory.write_u8(0, 0x01);
+    gb2.ld(0xF8);
+    assert_eq!(gb2.cpu.hl(), 0x0000);
+    assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
+
+    // No half carry, no carry: 0x0010 + 0x01 = 0x0011
+    let mut gb3 = Gameboy::new();
+    gb3.cpu.stack_pointer = 0x0010;
+    gb3.cpu.program_counter = 0;
+    gb3.memory.write_u8(0, 0x01);
+    gb3.ld(0xF8);
+    assert!(gb3.cpu.f & Gbz80::FLAG_H == 0);
+    assert!(gb3.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(gb3.cpu.f & Gbz80::FLAG_N == 0);
 }
 
 #[test]
@@ -408,4 +444,278 @@ fn test_ld_hl_mem_n8() {
 
     assert_eq!(gb.memory.read_u8(0xC000), 0xBC);
     assert_eq!(gb.cpu.program_counter, 1);
+}
+
+//
+// HALT via LD (HL),(HL) (0x76)
+//
+
+#[test]
+fn test_ld_hl_hl_halt() {
+    let mut gb = Gameboy::new();
+    gb.running = true;
+
+    gb.ld(0x76); // LD (HL),(HL) decodes to HALT
+
+    assert_eq!(gb.running, false, "LD (HL),(HL) should halt the CPU");
+}
+
+//
+// LD must never modify flags
+//
+
+#[test]
+fn test_ld_preserves_flags() {
+    // Representative LD opcodes across the surface
+    let opcodes = [0x40, 0x06, 0x01, 0x0A, 0x02, 0x22, 0xFA, 0xEA, 0x2A, 0xF2, 0xE2, 0xF9];
+
+    for opcode in opcodes {
+        let mut gb = Gameboy::new();
+        gb.cpu.a = 0x11;
+        gb.cpu.b = 0x22;
+        gb.cpu.c = 0x10;
+        gb.cpu.write_reg16(Reg16::BC, 0xC000);
+        gb.cpu.write_reg16(Reg16::DE, 0xC001);
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
+        gb.cpu.program_counter = 0x100;
+        gb.memory.write_u16(0x100, 0xC000);
+        gb.memory.write_u8(0xC000, 0x55);
+        gb.memory.write_u8(0xFF10, 0x66);
+
+        gb.cpu.f = 0xF0;
+        let flags_before = gb.cpu.f;
+
+        gb.ld(opcode);
+
+        assert_eq!(gb.cpu.f, flags_before, "LD (0x{:02X}) modified flags", opcode);
+    }
+}
+
+//
+// LD r,r with (HL) as source and/or destination through the ld_r_r path
+//
+
+#[test]
+fn test_ld_r_r_hl_as_source() {
+    // LD B,(HL) = 0x46, LD C,(HL) = 0x4E, ... LD A,(HL) = 0x7E
+    let regs = [Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L, Reg8::A];
+    for &dest in &regs {
+        let mut gb = Gameboy::new();
+        let opcode = 0x46 | ((dest as u8) << 3);
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
+        gb.memory.write_u8(0xC000, 0xAB);
+
+        gb.ld(opcode);
+
+        assert_eq!(gb.cpu.reg8(dest), 0xAB, "LD {:?},(HL) via ld_r_r failed", dest);
+    }
+}
+
+#[test]
+fn test_ld_r_r_hl_as_destination() {
+    // LD (HL),B = 0x70, LD (HL),C = 0x71, ... LD (HL),A = 0x77
+    // The H/L source cases are tested separately (see below) because the
+    // source value is H or L itself.
+    let regs = [Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::A];
+    for &src in &regs {
+        let mut gb = Gameboy::new();
+        let opcode = 0x70 | (src as u8);
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
+        gb.cpu.write_reg8(src, 0x5A);
+
+        gb.ld(opcode);
+
+        assert_eq!(gb.memory.read_u8(0xC000), 0x5A, "LD (HL),{:?} via ld_r_r failed", src);
+    }
+}
+
+#[test]
+fn test_ld_hl_h() {
+    // LD (HL),H = 0x74: writes H's value to address (HL) without changing H
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0xC000); // H=0xC0, L=0x00
+    gb.ld(0x74);
+    assert_eq!(gb.memory.read_u8(0xC000), 0xC0);
+    assert_eq!(gb.cpu.hl(), 0xC000, "HL must be unchanged");
+}
+
+#[test]
+fn test_ld_hl_l() {
+    // LD (HL),L = 0x75: writes L's value to address (HL) without changing L
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0xC012); // H=0xC0, L=0x12
+    gb.ld(0x75);
+    assert_eq!(gb.memory.read_u8(0xC012), 0x12);
+    assert_eq!(gb.cpu.hl(), 0xC012, "HL must be unchanged");
+}
+
+//
+// LD A,(nn) / LD (nn),A / LD (nn),SP little-endian write ordering
+//
+
+#[test]
+fn test_ld_a_nn_little_endian() {
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x4000;
+    gb.memory.write_u8(0x4000, 0x34); // low byte first
+    gb.memory.write_u8(0x4001, 0x12); // high byte
+    gb.memory.write_u8(0x1234, 0x77);
+
+    gb.ld(0xFA); // LD A,(nn)
+
+    assert_eq!(gb.cpu.reg8(Reg8::A), 0x77);
+}
+
+#[test]
+fn test_ld_nn_a_little_endian() {
+    let mut gb = Gameboy::new();
+    gb.cpu.a = 0x88;
+    gb.cpu.program_counter = 0x4000;
+    gb.memory.write_u8(0x4000, 0x50);
+    gb.memory.write_u8(0x4001, 0xC1);
+
+    gb.ld(0xEA); // LD (nn),A
+
+    assert_eq!(gb.memory.read_u8(0xC150), 0x88);
+}
+
+//
+// LD A,(HL+) / LD A,(HL-) use wrapping arithmetic
+//
+
+#[test]
+fn test_ld_a_hli_wrapping() {
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0xFFFF);
+    gb.memory.write_u8(0xFFFF, 0x7A);
+
+    gb.ld(0x2A); // LD A,(HL+)
+
+    assert_eq!(gb.cpu.reg8(Reg8::A), 0x7A);
+    // HL+ wraps 0xFFFF -> 0x0000
+    assert_eq!(gb.cpu.hl(), 0x0000);
+}
+
+#[test]
+fn test_ld_a_hld_wrapping() {
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0x0000);
+    gb.memory.write_u8(0x0000, 0x39);
+
+    gb.ld(0x3A); // LD A,(HL-)
+
+    assert_eq!(gb.cpu.reg8(Reg8::A), 0x39);
+    // HL- wraps 0x0000 -> 0xFFFF
+    assert_eq!(gb.cpu.hl(), 0xFFFF);
+}
+
+#[test]
+fn test_ld_a_hli_edge() {
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0xFFFF - 1);
+    gb.memory.write_u8(0xFFFE, 0x7A);
+
+    gb.ld(0x2A); // LD A,(HL+)
+
+    assert_eq!(gb.cpu.reg8(Reg8::A), 0x7A);
+    assert_eq!(gb.cpu.hl(), 0xFFFF);
+}
+
+#[test]
+fn test_ld_a_hld_edge() {
+    let mut gb = Gameboy::new();
+    gb.cpu.write_reg16(Reg16::HL, 0x0001);
+    gb.memory.write_u8(0x0001, 0x39);
+
+    gb.ld(0x3A); // LD A,(HL-)
+
+    assert_eq!(gb.cpu.reg8(Reg8::A), 0x39);
+    assert_eq!(gb.cpu.hl(), 0x0000);
+}
+
+//
+// LD (HL+),A / LD (HL-),A write before increment (correct operand order)
+//
+
+#[test]
+fn test_ld_hli_a_uses_original_address() {
+    let mut gb = Gameboy::new();
+    gb.cpu.a = 0x12;
+    gb.cpu.write_reg16(Reg16::HL, 0xC100);
+
+    gb.ld(0x22); // LD (HL+),A
+
+    // Value must be written at ORIGINAL HL, then HL incremented
+    assert_eq!(gb.memory.read_u8(0xC100), 0x12);
+    assert_eq!(gb.cpu.hl(), 0xC101);
+}
+
+#[test]
+fn test_ld_hld_a_uses_original_address() {
+    let mut gb = Gameboy::new();
+    gb.cpu.a = 0x34;
+    gb.cpu.write_reg16(Reg16::HL, 0xC100);
+
+    gb.ld(0x32); // LD (HL-),A
+
+    assert_eq!(gb.memory.read_u8(0xC100), 0x34);
+    assert_eq!(gb.cpu.hl(), 0xC0FF);
+}
+
+//
+// LD HL,SP+e8 (0xF8) — full flag + wrap coverage
+//
+
+#[test]
+fn test_ld_hl_sp_e8_extremes() {
+    // offset 0: HL == SP exactly
+    {
+        let mut gb = Gameboy::new();
+        gb.cpu.stack_pointer = 0x1234;
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u8(0, 0x00);
+
+        gb.ld(0xF8);
+
+        assert_eq!(gb.cpu.hl(), 0x1234);
+        assert_eq!(gb.cpu.program_counter, 1);
+    }
+    // max positive offset (+127)
+    {
+        let mut gb = Gameboy::new();
+        gb.cpu.stack_pointer = 0x1000;
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u8(0, 0x7F);
+
+        gb.ld(0xF8);
+
+        assert_eq!(gb.cpu.hl(), 0x107F);
+    }
+    // max negative offset (-128)
+    {
+        let mut gb = Gameboy::new();
+        gb.cpu.stack_pointer = 0x1000;
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u8(0, 0x80);
+
+        gb.ld(0xF8);
+
+        assert_eq!(gb.cpu.hl(), 0x0F80);
+    }
+}
+
+//
+// LD rr,nn / LD SP,nn set the full 16-bit register from a little-endian immediate
+//
+
+#[test]
+fn test_ld_rr_nn_little_endian() {
+    let mut gb = Gameboy::new();
+    gb.cpu.program_counter = 0x4000;
+    gb.memory.write_u8(0x4000, 0xEF); // low byte
+    gb.memory.write_u8(0x4001, 0xBE); // high byte
+
+    gb.ld(0x21); // LD HL,nn
+
+    assert_eq!(gb.cpu.hl(), 0xBEEF);
 }
