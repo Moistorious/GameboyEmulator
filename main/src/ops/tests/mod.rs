@@ -1,0 +1,14 @@
+mod adc_tests;
+mod add_tests;
+mod and_tests;
+mod bit_manipulation_tests;
+mod control_flow_tests;
+mod cp_tests;
+mod inc_dec_tests;
+mod ld_tests;
+mod misc_tests;
+mod or_tests;
+mod sbc_tests;
+mod shifts_tests;
+mod sub_tests;
+mod xor_tests;

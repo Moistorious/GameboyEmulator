@@ -167,18 +167,18 @@ impl Gameboy {
     }
 
     fn ld_sp_hl(&mut self){
-        self.cpu.set_hl(self.cpu.stack_pointer);
+        self.cpu.stack_pointer = self.cpu.hl();
     }
 
     fn ld_hl_sp_e8(&mut self){
         let imm = (self.read_u8_increment_pc() as i8) as i16 as u16;
-
         let addr: u16 = self.cpu.stack_pointer.wrapping_add(imm);
         self.cpu.set_hl(addr);
     }
 
     fn ld_nn_sp(&mut self){
-    
+        let imm = self.read_u16_increment_pc();
+        self.memory.write_u16(imm, self.cpu.stack_pointer);
     }
 
 }

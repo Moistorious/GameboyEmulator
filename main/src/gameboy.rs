@@ -197,7 +197,18 @@ impl Gameboy {
             0xEA | 0xFA | 0x0A | 0x1A | 0x2A | 0x3A |
             0xF8 | 0xF9 => self.ld(opcode),
             // LD>
+            // <Arithmetic
+            0x80..=0x87 => self.add(opcode),
+            0x88..=0x8F => self.adc(opcode),
+            0x90..=0x97 => self.sub(opcode),
+            0x98..=0x9F => self.sbc(opcode),
+            0xA0..=0xA7 => self.and(opcode),
             0xA8..=0xAF => self.xor(opcode),
+            0xB0..=0xB7 => self.or(opcode),
+            0xB8..=0xBF => self.cp(opcode),
+            
+            // Arithmetic>
+            
             0xCB => {
                 let opcode = self.read_u8_increment_pc(); 
                 match opcode {
