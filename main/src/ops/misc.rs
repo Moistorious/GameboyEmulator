@@ -1,31 +1,31 @@
 use crate::gameboy::Gameboy;
 
 impl Gameboy {
-    pub fn daa(&mut self) {
-        // TODO: Implement DAA (Decimal Adjust Accumulator)
+    pub fn daa(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn cpl(&mut self) {
-        // TODO: Implement CPL (Complement A)
+    pub fn cpl(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn scf(&mut self) {
-        // TODO: Implement SCF (Set Carry Flag)
+    pub fn scf(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn ccf(&mut self) {
-        // TODO: Implement CCF (Complement Carry Flag)
+    pub fn ccf(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn di(&mut self) {
-        // TODO: Implement DI (Disable Interrupts)
+    pub fn di(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn ei(&mut self) {
-        // TODO: Implement EI (Enable Interrupts)
+    pub fn ei(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 
-    pub fn stop(&mut self) {
-        // TODO: Implement STOP
+    pub fn stop(&mut self, opcode: u8) {
+        self.not_implemented(opcode);
     }
 }

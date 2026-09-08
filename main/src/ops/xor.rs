@@ -1,8 +1,9 @@
 use crate::gameboy::Gameboy;
-use crate::cpu::{Reg8, Reg16, Gbz80};
+use crate::cpu::{Reg8, Reg16};
 
 impl Gameboy {
     pub fn xor(&mut self, opcode: u8) {
+        
         let source_value = if opcode & 0xf == 0xE {
             // Value from pointer
             if opcode == 0xEE{

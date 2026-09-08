@@ -1,7 +1,6 @@
 use crate::cpu::Gbz80;
 use crate::memory::GbMemory;
 use crate::cartridge::Cartridge;
-use once_cell::sync::Lazy;
 use std::fs::File;
 use std::io::Read;
 
@@ -11,8 +10,8 @@ pub struct Gameboy {
     pub memory: GbMemory,
 }
 
+/*
 type GameboyInstruction = fn(&mut Gameboy, u8);
-
 static DISPATCH: Lazy<[GameboyInstruction; 256]> = Lazy::new(|| {
     let mut table: [GameboyInstruction; 256] = [Gameboy::not_implemented; 256];
     table[0x00] = Gameboy::nop;
@@ -103,7 +102,7 @@ static DISPATCH: Lazy<[GameboyInstruction; 256]> = Lazy::new(|| {
 
     table
 });
-
+ */
 #[allow(dead_code)]
 #[allow(unused)]
 impl Gameboy {
@@ -138,7 +137,7 @@ impl Gameboy {
             self.memory.boot_rom = Some(boot);
             self.memory.boot_rom_enabled = true;
         } else {
-            self.memory.cartridge = Cartridge::new(data);
+            self.memory.cartridge = Cartridge::new();
         }
         len as u16
     }
@@ -158,6 +157,7 @@ impl Gameboy {
 
     pub fn not_implemented(&mut self, opcode: u8) {
         println!("instruction not implemented opcode {:0X}", opcode);
+        self.halt();
     }
 
     pub fn nop(&mut self, _opcode: u8) {
@@ -197,13 +197,34 @@ impl Gameboy {
             0xEA | 0xFA | 0x0A | 0x1A | 0x2A | 0x3A |
             0xF8 | 0xF9 => self.ld(opcode),
             // LD>
-            _ => (),    
+            0xA8..=0xAF => self.xor(opcode),
+            0xCB => {
+                let opcode = self.read_u8_increment_pc(); 
+                match opcode {
+                    0x00..=0x07 => self.rlc(opcode),
+                    0x08..=0x0f => self.rrc(opcode),
+
+                    0x10..=0x17 => self.rl(opcode),
+                    0x18..=0x1f => self.rr(opcode),
+                    
+                    0x20..=0x27 => self.sla(opcode),
+                    0x28..=0x2f => self.sra (opcode),
+                    
+                    0x30..=0x37 => self.swap(opcode),
+                    0x38..=0x3F => self.srl(opcode),
+                    0x40..=0x7F => self.bit(opcode),
+                    0x80..=0xBF => self.res(opcode),
+                    0xA0..=0xFF => self.set(opcode)
+                }
+            },
+
+            _ => self.not_implemented(opcode),    
         }
 
 
 
 
 
-        DISPATCH[opcode as usize](self, opcode);
+        //DISPATCH[opcode as usize](self, opcode);
     }
 }

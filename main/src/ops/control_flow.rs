@@ -2,26 +2,26 @@ use crate::gameboy::Gameboy;
 
 impl Gameboy {
     pub fn jp(&mut self, opcode: u8) {
-        // TODO: Implement JP (Absolute Jump)
+        self.not_implemented(opcode);
     }
 
     pub fn jr(&mut self, opcode: u8) {
-        // TODO: Implement JR (Relative Jump)
+        self.not_implemented(opcode);
     }
 
     pub fn call(&mut self, opcode: u8) {
-        // TODO: Implement CALL
+        self.not_implemented(opcode);
     }
 
     pub fn ret(&mut self, opcode: u8) {
-        // TODO: Implement RET
+        self.not_implemented(opcode);
     }
 
     pub fn reti(&mut self, opcode: u8) {
-        // TODO: Implement RETI
+        self.not_implemented(opcode);
     }
 
     pub fn rst(&mut self, opcode: u8) {
-        // TODO: Implement RST
+        self.not_implemented(opcode);
     }
 }

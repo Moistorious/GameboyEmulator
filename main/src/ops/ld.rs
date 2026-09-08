@@ -1,3 +1,4 @@
+use crate::cpu::Reg8::C;
 use crate::cpu::{Reg8, Reg16};
 use crate::gameboy::Gameboy;
 
@@ -12,22 +13,29 @@ impl Gameboy {
             0x40..=0x7F => self.ld_r_r(opcode),
 
             // LD r,n
-            0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x3E => self.ld_r_n(opcode),
+            0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x3E | 0x36 => self.ld_r_n(opcode),
 
             // LD A,(rr)
             0x0A => self.ld_a_rr(Reg16::BC),
             0x1A => self.ld_a_rr(Reg16::DE),
+            0x2A => self.ld_a_hli(),
+            0x3A => self.ld_a_hld(),
+            0xF2 => self.ld_a_c(),
 
             // LD (rr),A
             0x02 => self.ld_rr_a(Reg16::BC),
             0x12 => self.ld_rr_a(Reg16::DE),
             0x22 => self.ld_hli(Reg16::HL),
             0x32 => self.ld_hld(Reg16::HL),
+            0xE2 => self.ld_c_a(),
 
             0x01 => self.ld_rr_nn(Reg16::BC),
             0x11 => self.ld_rr_nn(Reg16::DE),
             0x21 => self.ld_rr_nn(Reg16::HL),
             0x31 => self.ld_sp_nn(),
+            0xF9 => self.ld_sp_hl(),
+            0xF8 => self.ld_hl_sp_e8(),
+            0x08 => self.ld_nn_sp(),
 
             // LD A,(nn)
             0xFA => self.ld_a_nn(),
@@ -112,14 +120,14 @@ impl Gameboy {
     fn ld_hli(&mut self, rr: Reg16) {
         let addr = self.cpu.reg16(rr);
         let value = self.cpu.reg8(Reg8::A);
-        self.cpu.write_reg16(rr, self.cpu.reg16(rr) + 1);
+        self.cpu.write_reg16(rr, self.cpu.reg16(rr).wrapping_add(1));
         self.memory.write_u8(addr, value);
     }
 
     fn ld_hld(&mut self, rr: Reg16) {
         let addr = self.cpu.reg16(rr);
         let value = self.cpu.reg8(Reg8::A);
-        self.cpu.write_reg16(rr, self.cpu.reg16(rr) - 1);
+        self.cpu.write_reg16(rr, self.cpu.reg16(rr).wrapping_sub(1));
         self.memory.write_u8(addr, value);
     }
 
@@ -134,4 +142,43 @@ impl Gameboy {
         let value = self.cpu.reg8(Reg8::A);
         self.memory.write_u8(addr, value);
     }
+
+    fn ld_a_hli(&mut self) {
+
+        let addr = self.cpu.hl();
+        self.cpu.set_hl(addr + 1);
+        self.cpu.write_reg8(Reg8::A, self.memory.read_u8(addr));
+    }
+
+    fn ld_a_hld(&mut self) {
+        let addr = self.cpu.hl();
+        self.cpu.set_hl(addr - 1);
+        self.cpu.write_reg8(Reg8::A, self.memory.read_u8(addr));
+    }
+    fn ld_a_c(&mut self){
+        let addr: u16 = 0xFF00 + self.cpu.reg8(Reg8::C) as u16;
+        self.cpu.write_reg8(Reg8::A, self.memory.read_u8(addr));
+    }
+
+    fn ld_c_a(&mut self){
+        let addr: u16 = 0xFF00 + self.cpu.reg8(Reg8::C) as u16;
+        self.memory.write_u8(addr, self.cpu.reg8(Reg8::A));
+    
+    }
+
+    fn ld_sp_hl(&mut self){
+        self.cpu.set_hl(self.cpu.stack_pointer);
+    }
+
+    fn ld_hl_sp_e8(&mut self){
+        let imm = (self.read_u8_increment_pc() as i8) as i16 as u16;
+
+        let addr: u16 = self.cpu.stack_pointer.wrapping_add(imm);
+        self.cpu.set_hl(addr);
+    }
+
+    fn ld_nn_sp(&mut self){
+    
+    }
+
 }

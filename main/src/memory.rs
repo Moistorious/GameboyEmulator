@@ -21,7 +21,7 @@ pub struct GbMemory {
 impl GbMemory {
     pub fn new() -> Self {
         GbMemory {
-            cartridge: Cartridge::new_empty(),
+            cartridge: Cartridge::new(),
             vram: [0; VRAM_SIZE],
             wram: [0; WRAM_SIZE],
             oam: [0; OAM_SIZE],

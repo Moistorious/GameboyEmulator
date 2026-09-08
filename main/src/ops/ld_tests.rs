@@ -3,6 +3,7 @@
 mod ld_tests {
     use crate::cpu::{Reg16, Reg8};
     use crate::gameboy::Gameboy;
+
     fn ld_opcode(dest: Reg8, src: Reg8) -> u8 {
         0x40 | ((dest as u8) << 3) | (src as u8)
     }
@@ -21,16 +22,11 @@ mod ld_tests {
 
         for &dest in &regs {
             for &src in &regs {
-                // Skip LD (HL),(HL) because opcode 0x76 is HALT
-                if dest == Reg8::L && src == Reg8::L || dest == src {
+                if dest == src {
                     continue;
                 }
 
                 let opcode = ld_opcode(dest, src);
-                if opcode == 0x46 {
-                    assert_eq!(1, 2);
-                }
-
                 let mut gameboy = Gameboy::new();
 
                 // initialize dest with 0x00 and src with 0xAB
@@ -126,7 +122,8 @@ mod ld_tests {
 
         for &(reg, opcode) in &tests {
             let mut gb = Gameboy::new();
-            gb.memory.write_u8(0, 0x99); // pretend immediate at PC+1
+            gb.cpu.program_counter = 0;
+            gb.memory.write_u8(0, 0x99); // pretend immediate at PC
 
             gb.ld(opcode);
 
@@ -169,16 +166,17 @@ mod ld_tests {
             assert_eq!(gb.memory.read_u8(0x1FFF), 0x66, "LD ({:?}),A failed", pair);
         }
     }
+
     const LD_HLI_A: u8 = 0x22; // LD (HL+), A
     const LD_HLD_A: u8 = 0x32; // LD (HL-), A
+
     #[test]
     fn test_ld_hli_a_stores_a_and_increments_hl() {
         let mut gb = Gameboy::new();
 
         // Setup registers
         gb.cpu.a = 0xAB;
-        gb.cpu.h = 0xC0;
-        gb.cpu.l = 0x00;
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
         let hl_before = gb.cpu.hl();
 
         // Execute
@@ -198,8 +196,7 @@ mod ld_tests {
 
         // Setup registers
         gb.cpu.a = 0xAB;
-        gb.cpu.h = 0xC0;
-        gb.cpu.l = 0x10;
+        gb.cpu.write_reg16(Reg16::HL, 0xC010);
         let hl_before = gb.cpu.hl();
 
         // Execute
@@ -213,5 +210,206 @@ mod ld_tests {
         assert_eq!(gb.cpu.hl(), hl_before - 1, "HL should have decremented by 1");
     }
 
-    // You’d then continue with LD A,(nn), LD (nn),A, LD A,(C), LD (C),A, etc.
+    //
+    // New coverage & edge case tests
+    //
+
+    #[test]
+    fn test_ld_hli_a_wrapping() {
+        let mut gb = Gameboy::new();
+        gb.cpu.a = 0xAB;
+        gb.cpu.write_reg16(Reg16::HL, 0xFFFF);
+
+        // Execute LD (HL+), A
+        gb.ld(LD_HLI_A);
+
+        // Check value and wrapping
+        assert_eq!(gb.memory.read_u8(0xFFFF), 0xAB);
+        assert_eq!(gb.cpu.hl(), 0x0000);
+    }
+
+    #[test]
+    fn test_ld_hld_a_wrapping() {
+        let mut gb = Gameboy::new();
+        gb.cpu.a = 0xAB;
+        gb.cpu.write_reg16(Reg16::HL, 0x0000);
+
+        // Execute LD (HL-), A
+        gb.ld(LD_HLD_A);
+
+        // Check value and wrapping
+        assert_eq!(gb.memory.read_u8(0x0000), 0xAB);
+        assert_eq!(gb.cpu.hl(), 0xFFFF);
+    }
+
+    #[test]
+    fn test_ld_rr_nn() {
+        let tests = [
+            (0x01, Reg16::BC),
+            (0x11, Reg16::DE),
+            (0x21, Reg16::HL),
+        ];
+
+        for &(opcode, pair) in &tests {
+            let mut gb = Gameboy::new();
+            gb.cpu.program_counter = 0;
+            // Write 0xABCD as the 16-bit immediate value at PC
+            gb.memory.write_u16(0, 0xABCD);
+
+            gb.ld(opcode);
+
+            assert_eq!(gb.cpu.reg16(pair), 0xABCD, "LD {:?},nn failed", pair);
+            assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
+        }
+    }
+
+    #[test]
+    fn test_ld_sp_nn() {
+        let mut gb = Gameboy::new();
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u16(0, 0xFFFE);
+
+        gb.ld(0x31); // LD SP, nn
+
+        assert_eq!(gb.cpu.stack_pointer, 0xFFFE, "LD SP,nn failed");
+        assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
+    }
+
+    #[test]
+    fn test_ld_a_nn() {
+        let mut gb = Gameboy::new();
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u16(0, 0xC000); // 16-bit address
+        gb.memory.write_u8(0xC000, 0x77); // value at that address
+
+        gb.ld(0xFA); // LD A,(nn)
+
+        assert_eq!(gb.cpu.reg8(Reg8::A), 0x77, "LD A,(nn) failed");
+        assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
+    }
+
+    #[test]
+    fn test_ld_nn_a() {
+        let mut gb = Gameboy::new();
+        gb.cpu.program_counter = 0;
+        gb.cpu.write_reg8(Reg8::A, 0x88);
+        gb.memory.write_u16(0, 0xC000); // destination address
+
+        gb.ld(0xEA); // LD (nn),A
+
+        assert_eq!(gb.memory.read_u8(0xC000), 0x88, "LD (nn),A failed");
+        assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
+    }
+
+    #[test]
+    fn test_ld_a_hli() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
+        gb.memory.write_u8(0xC000, 0x44);
+
+        gb.ld(0x2A); // LD A,(HL+)
+
+        assert_eq!(gb.cpu.reg8(Reg8::A), 0x44);
+        assert_eq!(gb.cpu.hl(), 0xC001);
+    }
+
+    #[test]
+    fn test_ld_a_hld() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg16(Reg16::HL, 0xC005);
+        gb.memory.write_u8(0xC005, 0x55);
+
+        gb.ld(0x3A); // LD A,(HL-)
+
+        assert_eq!(gb.cpu.reg8(Reg8::A), 0x55);
+        assert_eq!(gb.cpu.hl(), 0xC004);
+    }
+
+    #[test]
+    fn test_ld_a_c() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg8(Reg8::C, 0x10);
+        gb.memory.write_u8(0xFF10, 0x66);
+
+        gb.ld(0xF2); // LD A,(C)
+
+        assert_eq!(gb.cpu.reg8(Reg8::A), 0x66);
+    }
+
+    #[test]
+    fn test_ld_c_a() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg8(Reg8::C, 0x20);
+        gb.cpu.write_reg8(Reg8::A, 0x77);
+
+        gb.ld(0xE2); // LD (C),A
+
+        assert_eq!(gb.memory.read_u8(0xFF20), 0x77);
+    }
+
+    #[test]
+    fn test_ld_hl_sp_e8() {
+        // Positive offset
+        {
+            let mut gb = Gameboy::new();
+            gb.cpu.stack_pointer = 0x1000;
+            gb.cpu.program_counter = 0;
+            gb.memory.write_u8(0, 0x10); // Offset = 16
+
+            gb.ld(0xF8); // LD HL,SP+e8
+
+            assert_eq!(gb.cpu.hl(), 0x1010);
+            assert_eq!(gb.cpu.program_counter, 1);
+            // check flags (Z=0, N=0, H=0, C=0)
+            assert_eq!(gb.cpu.reg8(Reg8::F) & 0xF0, 0);
+        }
+        // Negative offset
+        {
+            let mut gb = Gameboy::new();
+            gb.cpu.stack_pointer = 0x1000;
+            gb.cpu.program_counter = 0;
+            gb.memory.write_u8(0, 0xF0); // Offset = -16 (0xF0)
+
+            gb.ld(0xF8); // LD HL,SP+e8
+
+            assert_eq!(gb.cpu.hl(), 0x0FF0);
+            assert_eq!(gb.cpu.program_counter, 1);
+        }
+    }
+
+    #[test]
+    fn test_ld_sp_hl() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg16(Reg16::HL, 0x55AA);
+
+        gb.ld(0xF9); // LD SP,HL
+
+        assert_eq!(gb.cpu.stack_pointer, 0x55AA);
+    }
+
+    #[test]
+    fn test_ld_nn_sp() {
+        let mut gb = Gameboy::new();
+        gb.cpu.stack_pointer = 0x9988;
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u16(0, 0xC500);
+
+        gb.ld(0x08); // LD (nn),SP
+
+        assert_eq!(gb.memory.read_u16(0xC500), 0x9988);
+        assert_eq!(gb.cpu.program_counter, 2);
+    }
+
+    #[test]
+    fn test_ld_hl_mem_n8() {
+        let mut gb = Gameboy::new();
+        gb.cpu.write_reg16(Reg16::HL, 0xC000);
+        gb.cpu.program_counter = 0;
+        gb.memory.write_u8(0, 0xBC);
+
+        gb.ld(0x36); // LD (HL),n
+
+        assert_eq!(gb.memory.read_u8(0xC000), 0xBC);
+        assert_eq!(gb.cpu.program_counter, 1);
+    }
 }

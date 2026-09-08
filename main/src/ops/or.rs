@@ -1,5 +1,5 @@
 use crate::gameboy::Gameboy;
-use crate::cpu::{Reg8, Reg16, Gbz80};
+use crate::cpu::{Reg8, Reg16};
 
 impl Gameboy {
     pub fn or(&mut self, opcode: u8) {

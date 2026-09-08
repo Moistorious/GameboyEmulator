@@ -14,4 +14,10 @@ impl Cartridge {
         let len = data.len().min(ROM_SIZE);
         self.rom[..len].copy_from_slice(&data[..len]);
     }
+    pub fn read(&self, address: u16) -> u8 {
+        self.rom[address as usize]
+    }
+    pub fn write(&mut self, address: u16, value: u8) {
+        self.rom[address as usize] = value;
+    }
 }
