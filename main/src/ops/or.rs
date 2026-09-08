@@ -1,8 +1,9 @@
 use crate::gameboy::Gameboy;
 use crate::cpu::{Reg8, Reg16};
+use crate::error::EmulatorError;
 
 impl Gameboy {
-    pub fn or(&mut self, opcode: u8) {
+    pub fn or(&mut self, opcode: u8) -> Result<(), EmulatorError> {
         let source_value = if opcode & 0xf == 0xE {
             // Value from pointer
             if opcode == 0xEE{
@@ -19,5 +20,6 @@ impl Gameboy {
         self.cpu.set_flags(value == 0, false, false, false);
 
         self.cpu.write_reg8(Reg8::A, value);
+        Ok(())
     }
 }

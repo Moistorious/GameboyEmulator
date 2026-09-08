@@ -18,7 +18,7 @@ fn main() {
 
     loop {
         if gameboy.running {
-            gameboy.execute_next();
+            gameboy.step();
         } else {
             break;
         }

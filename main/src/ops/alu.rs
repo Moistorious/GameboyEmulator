@@ -1,5 +1,6 @@
 use crate::gameboy::Gameboy;
 use crate::cpu::AluOp;
+use crate::error::EmulatorError;
 
 impl Gameboy {
     fn alu_op<F>(&mut self, value: u8, op: AluOp, f: F)

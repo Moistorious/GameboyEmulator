@@ -84,6 +84,30 @@ impl Gbz80 {
         }
     }
 
+    pub fn add_carry_16(&self, a:u16, b:u16) -> bool {
+        (a as u32) + (b as u32) > 0xFFFF
+    }
+
+    pub fn add_half_carry_16(&self, a:u16, b:u16) -> bool {
+        (a & 0xFFF) + (b & 0xFFF) > 0xFFF
+    }
+
+    pub fn flags_from_16bit_add(&mut self, a:u16, b:u16) -> (bool, bool, bool, bool) {
+        (false,false, self.add_half_carry_16(a,b), self.add_carry_16(a,b))
+    }
+
+    pub fn add_carry(&self, a:u8, b:u8) -> bool {
+        (a as u16) + (b as u16) > 0xFF
+    }
+
+    pub fn add_half_carry(&self, a:u8, b:u8) -> bool {
+        (a & 0xF) + (b & 0xF) > 0xF
+    }
+
+    pub fn flags_from_add(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
+        (false,false, self.add_half_carry(a,b), self.add_carry(a,b))
+    }
+
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
         self.set_flag(Self::FLAG_Z, z);
         self.set_flag(Self::FLAG_N, n);

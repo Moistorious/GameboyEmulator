@@ -2,4 +2,5 @@ pub mod cartridge;
 pub mod cpu;
 pub mod gameboy;
 pub mod memory;
-mod ops;
+pub mod ops;
+pub mod error;

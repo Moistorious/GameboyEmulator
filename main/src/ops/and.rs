@@ -1,7 +1,8 @@
 use crate::gameboy::Gameboy;
+use crate::error::EmulatorError;
 
 impl Gameboy {
-    pub fn and(&mut self, opcode: u8) {
-        self.not_implemented(opcode);
+    pub fn and(&mut self, opcode: u8) -> Result<(), EmulatorError> {
+        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
     }
 }
