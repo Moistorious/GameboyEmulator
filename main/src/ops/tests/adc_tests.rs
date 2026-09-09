@@ -12,7 +12,7 @@ fn test_adc_a_r8() {
     gb.cpu.b = 0x20;
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
 
-    gb.adc(0x88); // ADC A, B
+    gb.adc(0x88).unwrap(); // ADC A, B
 
     assert_eq!(gb.cpu.a, 0x31);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -28,7 +28,7 @@ fn test_adc_a_r8_no_carry_in() {
     gb.cpu.b = 0x20;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.adc(0x88);
+    gb.adc(0x88).unwrap();
 
     assert_eq!(gb.cpu.a, 0x30);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -45,7 +45,7 @@ fn test_adc_all_r8() {
         gb.cpu.write_reg8(reg, 0x05);
         gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-        gb.adc(opcode);
+        gb.adc(opcode).unwrap();
 
         assert_eq!(gb.cpu.a, 0x0F, "ADC A,{:?} failed", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
@@ -61,7 +61,7 @@ fn test_adc_a_hl_mem() {
     gb.memory.write_u8(0xC000, 0x05);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.adc(0x8E); // ADC A, (HL)
+    gb.adc(0x8E).unwrap(); // ADC A, (HL)
 
     assert_eq!(gb.cpu.a, 0x0F);
     assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
@@ -75,7 +75,7 @@ fn test_adc_a_n8() {
     gb.memory.write_u8(0x101, 0x05);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.adc(0xCE); // ADC A, n
+    gb.adc(0xCE).unwrap(); // ADC A, n
 
     assert_eq!(gb.cpu.a, 0x0F);
     assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
@@ -88,7 +88,7 @@ fn test_adc_zero_carry_out() {
     gb.cpu.a = 0xFF;
     gb.cpu.b = 0x00;
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.adc(0x88);
+    gb.adc(0x88).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 }
@@ -100,7 +100,7 @@ fn test_adc_half_carry() {
     gb.cpu.a = 0x0F;
     gb.cpu.b = 0x00;
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.adc(0x88);
+    gb.adc(0x88).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 
     // 0x0E + 0x00 + c1 = 0x0F -> H=0
@@ -108,7 +108,7 @@ fn test_adc_half_carry() {
     gb2.cpu.a = 0x0E;
     gb2.cpu.b = 0x00;
     gb2.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb2.adc(0x88);
+    gb2.adc(0x88).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
 }
 
@@ -119,7 +119,7 @@ fn test_adc_carry_out_only() {
     gb.cpu.a = 0xFE;
     gb.cpu.b = 0x02;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.adc(0x88);
+    gb.adc(0x88).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
 }

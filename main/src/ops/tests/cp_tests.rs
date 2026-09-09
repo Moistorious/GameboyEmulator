@@ -12,7 +12,7 @@ fn test_cp_r8() {
     gb.cpu.a = 0x30;
     gb.cpu.b = 0x30;
 
-    gb.cp(0xB8);
+    gb.cp(0xB8).unwrap();
 
     assert_eq!(gb.cpu.a, 0x30, "CP must not modify A");
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -30,7 +30,7 @@ fn test_cp_all_r8() {
         gb.cpu.a = 0x30;
         gb.cpu.write_reg8(reg, 0x10);
 
-        gb.cp(opcode);
+        gb.cp(opcode).unwrap();
 
         assert_eq!(gb.cpu.a, 0x30, "CP {:?} must not modify A", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -49,7 +49,7 @@ fn test_cp_a_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x30);
 
-    gb.cp(0xBE);
+    gb.cp(0xBE).unwrap();
 
     assert_eq!(gb.cpu.a, 0x30);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -63,7 +63,7 @@ fn test_cp_a_n8() {
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u8(0x101, 0x10);
 
-    gb.cp(0xFE);
+    gb.cp(0xFE).unwrap();
 
     assert_eq!(gb.cpu.a, 0x30);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -75,7 +75,7 @@ fn test_cp_half_borrow() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x01;
-    gb.cp(0xB8);
+    gb.cp(0xB8).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 }
 
@@ -84,7 +84,7 @@ fn test_cp_borrow() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x01;
-    gb.cp(0xB8);
+    gb.cp(0xB8).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
 }

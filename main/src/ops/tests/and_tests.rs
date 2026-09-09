@@ -12,7 +12,7 @@ fn test_and_a_r8() {
     gb.cpu.a = 0xF0;
     gb.cpu.b = 0x01;
 
-    gb.and(0xA0);
+    gb.and(0xA0).unwrap();
 
     assert_eq!(gb.cpu.a, 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -30,7 +30,7 @@ fn test_and_all_r8() {
         gb.cpu.a = 0xFF;
         gb.cpu.write_reg8(reg, 0x0F);
 
-        gb.and(opcode);
+        gb.and(opcode).unwrap();
 
         assert_eq!(gb.cpu.a, 0x0F, "AND A,{:?} failed", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -47,7 +47,7 @@ fn test_and_a_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x0F);
 
-    gb.and(0xA6);
+    gb.and(0xA6).unwrap();
 
     assert_eq!(gb.cpu.a, 0x0F);
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
@@ -60,7 +60,7 @@ fn test_and_a_n8() {
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u8(0x101, 0x0F);
 
-    gb.and(0xE6);
+    gb.and(0xE6).unwrap();
 
     assert_eq!(gb.cpu.a, 0x0F);
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
@@ -72,7 +72,7 @@ fn test_and_zero_result() {
     gb.cpu.a = 0xF0;
     gb.cpu.b = 0x0F;
 
-    gb.and(0xA0);
+    gb.and(0xA0).unwrap();
 
     assert_eq!(gb.cpu.a, 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);

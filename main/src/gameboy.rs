@@ -50,19 +50,6 @@ impl Gameboy {
         len as u16
     }
 
-    pub fn ld_n_n(&self, opcode: u8) {
-        println!("{}", opcode);
-    }
-
-    pub fn ld_16_16(&self, source: u16, dest: &mut u16) {
-        *dest = source;
-    }
-
-    pub fn ld_sp_u16(&mut self, program_counter: &mut u16, stack_pointer: &mut u16) {
-        self.ld_16_16(self.memory.read_u16(*program_counter + 1), stack_pointer);
-        *program_counter = *program_counter + 3;
-    }
-
     pub fn nop(&mut self, _opcode: u8) -> Result<(),EmulatorError> {
         self.cpu.program_counter += 1;
         Ok(())

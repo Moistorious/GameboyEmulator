@@ -12,7 +12,7 @@ fn test_sbc_a_r8() {
     gb.cpu.b = 0x10;
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
 
-    gb.sbc(0x98);
+    gb.sbc(0x98).unwrap();
 
     assert_eq!(gb.cpu.a, 0x1F);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -28,7 +28,7 @@ fn test_sbc_a_r8_no_carry_in() {
     gb.cpu.b = 0x10;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.sbc(0x98);
+    gb.sbc(0x98).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -46,7 +46,7 @@ fn test_sbc_all_r8() {
         gb.cpu.write_reg8(reg, 0x10);
         gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-        gb.sbc(opcode);
+        gb.sbc(opcode).unwrap();
 
         assert_eq!(gb.cpu.a, 0x20, "SBC A,{:?} failed", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -61,7 +61,7 @@ fn test_sbc_a_hl_mem() {
     gb.memory.write_u8(0xC000, 0x10);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.sbc(0x9E);
+    gb.sbc(0x9E).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -75,7 +75,7 @@ fn test_sbc_a_n8() {
     gb.memory.write_u8(0x101, 0x10);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
-    gb.sbc(0xDE);
+    gb.sbc(0xDE).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -88,7 +88,7 @@ fn test_sbc_zero() {
     gb.cpu.a = 0x01;
     gb.cpu.b = 0x00;
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.sbc(0x98);
+    gb.sbc(0x98).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
 }
@@ -100,7 +100,7 @@ fn test_sbc_half_borrow() {
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x01;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.sbc(0x98);
+    gb.sbc(0x98).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 }
 
@@ -111,6 +111,6 @@ fn test_sbc_borrow() {
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x01;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.sbc(0x98);
+    gb.sbc(0x98).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 }

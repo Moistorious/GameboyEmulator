@@ -11,7 +11,7 @@ fn test_sub_a_r8() {
     gb.cpu.a = 0x30;
     gb.cpu.b = 0x10;
 
-    gb.sub(0x90);
+    gb.sub(0x90).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -29,7 +29,7 @@ fn test_sub_all_r8() {
         gb.cpu.a = 0x30;
         gb.cpu.write_reg8(reg, 0x10);
 
-        gb.sub(opcode);
+        gb.sub(opcode).unwrap();
 
         assert_eq!(gb.cpu.a, 0x20, "SUB A,{:?} failed", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -43,7 +43,7 @@ fn test_sub_a_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x10);
 
-    gb.sub(0x96);
+    gb.sub(0x96).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -56,7 +56,7 @@ fn test_sub_a_n8() {
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u8(0x101, 0x10);
 
-    gb.sub(0xD6);
+    gb.sub(0xD6).unwrap();
 
     assert_eq!(gb.cpu.a, 0x20);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
@@ -67,7 +67,7 @@ fn test_sub_zero_flag() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x10;
-    gb.sub(0x90);
+    gb.sub(0x90).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
 }
@@ -78,14 +78,14 @@ fn test_sub_half_borrow() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x01;
-    gb.sub(0x90);
+    gb.sub(0x90).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 
     // 0x20 - 0x01 = 0x1F -> H clear
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x20;
     gb2.cpu.b = 0x01;
-    gb2.sub(0x90);
+    gb2.sub(0x90).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
 }
 
@@ -95,13 +95,13 @@ fn test_sub_borrow() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x01;
-    gb.sub(0x90);
+    gb.sub(0x90).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 
     // 0x10 - 0x01 = 0x0F -> C clear
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x10;
     gb2.cpu.b = 0x01;
-    gb2.sub(0x90);
+    gb2.sub(0x90).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }

@@ -10,7 +10,7 @@ use crate::gameboy::Gameboy;
 fn test_xor_a_a() {
     let mut gameboy = Gameboy::new();
     gameboy.cpu.write_reg8(Reg8::A, 0xAE);
-    gameboy.xor(0xAF); // XOR A,A
+    gameboy.xor(0xAF).unwrap(); // XOR A,A
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0x00);
     assert!(gameboy.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
@@ -26,7 +26,7 @@ fn test_xor_all_reg8() {
         let mut gameboy = Gameboy::new();
         gameboy.cpu.write_reg8(Reg8::A, 0x01);
         gameboy.cpu.write_reg8(src, 0xAB);
-        gameboy.xor(opcode);
+        gameboy.xor(opcode).unwrap();
         assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xAA, "XOR A,{:?} failed", src);
         assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
         assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
@@ -41,7 +41,7 @@ fn test_xor_a_from_hl() {
     gameboy.cpu.write_reg8(Reg8::A, 0x01);
     gameboy.cpu.write_reg16(Reg16::HL, 0xC000);
     gameboy.memory.write_u8(0xC000, 0xAB);
-    gameboy.xor(0xAE); // XOR A,(HL)
+    gameboy.xor(0xAE).unwrap(); // XOR A,(HL)
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xAA);
     assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
     assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
@@ -52,7 +52,7 @@ fn test_xor_a_n8() {
     let mut gameboy = Gameboy::new();
     gameboy.cpu.write_reg8(Reg8::A, 0x01);
     gameboy.memory.write_u8(0x00, 0xAB); // immediate at PC 0
-    gameboy.xor(0xEE); // XOR A,n
+    gameboy.xor(0xEE).unwrap(); // XOR A,n
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xAA);
     assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
     assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
@@ -65,7 +65,7 @@ fn test_xor_zero_result() {
     let mut gameboy = Gameboy::new();
     gameboy.cpu.write_reg8(Reg8::A, 0xF0);
     gameboy.cpu.write_reg8(Reg8::B, 0xF0);
-    gameboy.xor(0xA8); // XOR A,B
+    gameboy.xor(0xA8).unwrap(); // XOR A,B
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0x00);
     assert!(gameboy.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);

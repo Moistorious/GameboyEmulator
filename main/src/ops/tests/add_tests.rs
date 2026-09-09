@@ -19,7 +19,7 @@ fn test_add_a_r8() {
         gb.cpu.a = 0x10;
         gb.cpu.write_reg8(reg, 0x20);
 
-        gb.add(opcode);
+        gb.add(opcode).unwrap();
 
         if reg == Reg8::A {
             assert_eq!(gb.cpu.a, 0x20);
@@ -40,7 +40,7 @@ fn test_add_a_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x08);
 
-    gb.add(0x86); // ADD A, (HL)
+    gb.add(0x86).unwrap(); // ADD A, (HL)
 
     assert_eq!(gb.cpu.a, 0x1A);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -54,9 +54,8 @@ fn test_add_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x25;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x10);
-
-    gb.add(0xC6); // ADD A, n
+    gb.memory.write_u8(0x100, 0x10);
+    gb.add(0xC6).unwrap(); // ADD A, n
 
     assert_eq!(gb.cpu.a, 0x35);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -70,7 +69,7 @@ fn test_add_zero_flag() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x00;
-    gb.add(0x80);
+    gb.add(0x80).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
@@ -83,7 +82,7 @@ fn test_add_half_carry_flag() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x0F;
     gb.cpu.b = 0x01;
-    gb.add(0x80);
+    gb.add(0x80).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
     assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
@@ -92,7 +91,7 @@ fn test_add_half_carry_flag() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x0E;
     gb2.cpu.b = 0x01;
-    gb2.add(0x80);
+    gb2.add(0x80).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
 }
 
@@ -102,7 +101,7 @@ fn test_add_carry_flag() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0xFF;
     gb.cpu.b = 0x01;
-    gb.add(0x80);
+    gb.add(0x80).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
 
@@ -110,7 +109,7 @@ fn test_add_carry_flag() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x0F;
     gb2.cpu.b = 0x01;
-    gb2.add(0x80);
+    gb2.add(0x80).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }
 
@@ -120,7 +119,7 @@ fn test_add_hl_bc() {
     gb.cpu.set_hl(0x1000);
     gb.cpu.set_bc(0x0234);
 
-    gb.add(0x09); // ADD HL, BC
+    gb.add(0x09).unwrap(); // ADD HL, BC
 
     assert_eq!(gb.cpu.hl(), 0x1234);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0); // Z unaffected by ADD HL
@@ -139,7 +138,7 @@ fn test_add_hl_all_rr() {
             _ => {}
         }
         let expect = if matches!(reg, Reg16::HL) { 0x2000 } else { 0x1234 };
-        gb.add(opcode);
+        gb.add(opcode).unwrap();
         assert_eq!(gb.cpu.hl(), expect, "ADD HL,{:?} (0x{:02X}) failed", reg, opcode);
         assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
     }
@@ -151,7 +150,7 @@ fn test_add_hl_half_carry() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0x0FFF);
     gb.cpu.set_bc(0x0001);
-    gb.add(0x09);
+    gb.add(0x09).unwrap();
     assert_eq!(gb.cpu.hl(), 0x1000);
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 
@@ -159,7 +158,7 @@ fn test_add_hl_half_carry() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.set_hl(0x0E00);
     gb2.cpu.set_bc(0x0100);
-    gb2.add(0x09);
+    gb2.add(0x09).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
 }
 
@@ -169,7 +168,7 @@ fn test_add_hl_carry() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xFFFF);
     gb.cpu.set_bc(0x0001);
-    gb.add(0x09);
+    gb.add(0x09).unwrap();
     assert_eq!(gb.cpu.hl(), 0x0000);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 }
@@ -181,7 +180,7 @@ fn test_add_sp_n() {
     gb.cpu.program_counter = 0x200;
     gb.memory.write_u8(0x201, 0x02);
 
-    gb.add(0xE8); // ADD SP, n
+    gb.add(0xE8).unwrap(); // ADD SP, n
 
     assert_eq!(gb.cpu.stack_pointer, 0x1002);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -197,7 +196,7 @@ fn test_add_sp_negative() {
     gb.cpu.program_counter = 0x200;
     gb.memory.write_u8(0x201, 0xFF); // -1
 
-    gb.add(0xE8);
+    gb.add(0xE8).unwrap();
 
     assert_eq!(gb.cpu.stack_pointer, 0x0FFF);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -211,7 +210,7 @@ fn test_add_sp_flags() {
     gb.cpu.stack_pointer = 0x000F;
     gb.cpu.program_counter = 0;
     gb.memory.write_u8(1, 0x01);
-    gb.add(0xE8);
+    gb.add(0xE8).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 
     // carry: 0xFFFF + 0x01 = 0x0000
@@ -219,7 +218,7 @@ fn test_add_sp_flags() {
     gb2.cpu.stack_pointer = 0xFFFF;
     gb2.cpu.program_counter = 0;
     gb2.memory.write_u8(1, 0x01);
-    gb2.add(0xE8);
+    gb2.add(0xE8).unwrap();
     assert_eq!(gb2.cpu.stack_pointer, 0x0000);
     assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
 }

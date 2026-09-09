@@ -18,7 +18,14 @@ fn main() {
 
     loop {
         if gameboy.running {
-            gameboy.step();
+            match gameboy.step() {
+                Ok(()) => {}
+                Err(e) => {
+                    eprintln!("emulator error: {e}");
+                    _ = gameboy.halt();
+                    break;
+                }
+            }
         } else {
             break;
         }
