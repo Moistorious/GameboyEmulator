@@ -32,11 +32,12 @@ fn test_cp_all_r8() {
 
         gb.cp(opcode).unwrap();
 
-        assert_eq!(gb.cpu.a, 0x30, "CP {:?} must not modify A", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
         if reg == Reg8::A {
+            assert_eq!(gb.cpu.a, 0x10, "CP {:?} must not modify A", reg);
             assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
         } else {
+            assert_eq!(gb.cpu.a, 0x30, "CP {:?} must not modify A", reg);
             assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
         }
     }
@@ -61,7 +62,7 @@ fn test_cp_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x30;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x10);
+    gb.memory.write_u8(0x100, 0x10);
 
     gb.cp(0xFE).unwrap();
 

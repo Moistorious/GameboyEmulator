@@ -1,4 +1,4 @@
-use crate::cpu::{AluOp, Gbz80, Reg8, Reg16};
+use crate::cpu::{Gbz80, Reg8, Reg16};
 use crate::error::EmulatorError;
 use crate::gameboy::Gameboy;
 
@@ -88,49 +88,42 @@ impl Gameboy {
 
         Ok(())
     }
+    pub fn cp(&mut self, opcode: u8) -> Result<(), EmulatorError> {
+        let val = self.get_alu_operand(opcode);
+        let (z,n,h,c) = self.cpu.flags_from_sub(self.cpu.a, val);
+        self.cpu.set_flags(z,n,h,c);
+
+        Ok(())
+    }
     pub fn sbc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(
-            opcode,
-            self.cpu.program_counter,
-        ))
+        let val = self.get_alu_operand(opcode);
+        let (z,n,h,c) = self.cpu.flags_from_sbc(self.cpu.a, val);
+
+        self.cpu.a = self.cpu.a.wrapping_sub(val)
+                        .wrapping_sub(self.cpu.get_flag(Gbz80::FLAG_C) as u8);
+
+        self.cpu.set_flags(z,n,h,c);
+
+        Ok(())
     }
 
     pub fn and(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(
-            opcode,
-            self.cpu.program_counter,
-        ))
+        let val = self.get_alu_operand(opcode);
+        self.cpu.a = self.cpu.a & val;
+        self.cpu.set_flags(self.cpu.a == 0, false, true, false);
+        Ok(())
     }
     pub fn or(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        let source_value = if opcode & 0xf == 0xE {
-            // Value from pointer
-            if opcode == 0xEE {
-                self.read_u8_increment_pc()
-            } else {
-                self.memory.read_u8(self.cpu.reg16(Reg16::HL))
-            }
-        } else {
-            self.cpu.reg8(Reg8::from_u8(opcode & 7))
-        };
+        let val = self.get_alu_operand(opcode);
 
-        let value = self.cpu.reg8(Reg8::A) | source_value;
-
-        self.cpu.set_flags(value == 0, false, false, false);
-
-        self.cpu.write_reg8(Reg8::A, value);
+        self.cpu.a = self.cpu.a | val;
+        self.cpu.set_flags(self.cpu.a == 0, false, false, false);
         Ok(())
     }
     pub fn xor(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(
-            opcode,
-            self.cpu.program_counter,
-        ))
-
-        // let value = self.cpu.reg8(Reg8::A) ^ source_value;
-
-        // self.cpu.set_flags(value == 0, false, false, false);
-
-        // self.cpu.write_reg8(Reg8::A, value);
-        // Ok(())
+        let val = self.get_alu_operand(opcode);
+        self.cpu.a = self.cpu.a ^ val;
+        self.cpu.set_flags(self.cpu.a == 0, false, false, false);
+        Ok(())
     }
 }

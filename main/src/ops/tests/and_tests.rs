@@ -58,7 +58,7 @@ fn test_and_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0xFF;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x0F);
+    gb.memory.write_u8(0x100, 0x0F);
 
     gb.and(0xE6).unwrap();
 

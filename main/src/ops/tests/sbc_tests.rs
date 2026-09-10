@@ -72,7 +72,7 @@ fn test_sbc_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x30;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x10);
+    gb.memory.write_u8(0x100, 0x10);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
     gb.sbc(0xDE).unwrap();

@@ -43,13 +43,7 @@ pub enum Reg16 {
     HL = 4,
     AF = 6,
 }
-#[derive(Clone, Copy, Debug)]
-pub enum AluOp {
-    And,
-    Or,
-    Xor,
-    Cp,
-}
+
 pub struct Gbz80 {
     pub b: u8,
     pub c: u8,
@@ -113,16 +107,24 @@ impl Gbz80 {
         )
     }
 
-    pub fn sub_carry(&self, a:u8, b:u8) -> bool {
-        a < b
-    }
-
-    pub fn sub_half_carry(&self, a:u8, b:u8) -> bool {
-        (a & 0xF) < (b & 0xF)
-    }
-
     pub fn flags_from_sub(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
-        (a.wrapping_sub(b) == 0, true, self.sub_half_carry(a,b), self.sub_carry(a,b))
+        (
+            a.wrapping_sub(b) == 0, // Z: Zero
+            true, // N: Subtraction 
+            (a & 0xF) < (b & 0xF), // H: Half Carry
+            a < b // C: Carry
+        )
+    }
+
+    pub fn flags_from_sbc(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
+        let carry = self.get_flag(Self::FLAG_C) as u8;
+        (
+            a.wrapping_sub(b)
+                .wrapping_sub(carry) == 0, // Z: Zero
+            false, // N: Subtraction
+            (a & 0xF) < ((b & 0xF) + carry), // H: Half Carry
+            (a as u16) < (b as u16 + carry as u16) // C: Carry
+        )
     }
 
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
