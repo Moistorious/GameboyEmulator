@@ -105,7 +105,7 @@ impl Gbz80 {
     }
 
     pub fn flags_from_add(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
-        (false,false, self.add_half_carry(a,b), self.add_carry(a,b))
+        (a.wrapping_add(b) == 0,false, self.add_half_carry(a,b), self.add_carry(a,b))
     }
 
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {

@@ -15,10 +15,29 @@
     {
       "label": "cargo test",
       "type": "shell",
-      "command": "cargo test --package main",
+      "command": "cargo test --package main -- --color always",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"],
+      "detail": "Run all tests for the main crate with colored output."
+    },
+    {
+      "label": "cargo test --lib",
+      "type": "shell",
+      "command": "cargo test --package main --lib -- --color always",
       "group": "test",
       "problemMatcher": ["$rustc"],
-      "detail": "Run tests for the main Rust crate."
+      "detail": "Run library unit tests only (skips integration/bench targets)."
+    },
+    {
+      "label": "cargo nextest run",
+      "type": "shell",
+      "command": "cargo nextest run --package main",
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "detail": "Run tests with cargo-nextest (clean pass/fail summary)."
     },
     {
       "label": "cargo run",

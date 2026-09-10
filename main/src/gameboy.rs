@@ -91,14 +91,14 @@ impl Gameboy {
             0xF8 | 0xF9 => self.ld(opcode),
             // LD>
             // <Arithmetic
-            0x80..=0x87 => self.add(opcode),
-            0x88..=0x8F => self.adc(opcode),
-            0x90..=0x97 => self.sub(opcode),
-            0x98..=0x9F => self.sbc(opcode),
-            0xA0..=0xA7 => self.and(opcode),
-            0xA8..=0xAF => self.xor(opcode),
-            0xB0..=0xB7 => self.or(opcode),
-            0xB8..=0xBF => self.cp(opcode),
+            0x80..=0x87 | 0xC6 | 0x09 | 0x19 | 0x29 | 0x39 | 0xE8 => self.add(opcode),
+            0x88..=0x8F | 0xCE => self.adc(opcode),
+            0x90..=0x97 | 0xD6 => self.sub(opcode),
+            0x98..=0x9F | 0xDE => self.sbc(opcode),
+            0xA0..=0xA7 | 0xE6 => self.and(opcode),
+            0xA8..=0xAF | 0xEE => self.xor(opcode),
+            0xB0..=0xB7 | 0xF6 => self.or(opcode),
+            0xB8..=0xBF | 0xFE => self.cp(opcode),
             
             // Arithmetic>
             

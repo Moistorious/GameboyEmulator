@@ -5,9 +5,6 @@ use crate::cpu::{Gbz80, Reg8};
 // All clear N and H. Z = (result == 0). C = shifted-out bit.
 // SWAP clears C. SRA/others set C from the bit shifted out.
 
-fn reg_val(opcode: u8) -> u8 {
-    opcode & 0x07
-}
 
 #[test]
 fn test_rlc() {
