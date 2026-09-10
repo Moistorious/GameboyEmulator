@@ -72,7 +72,7 @@ fn test_adc_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x0A;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x05);
+    gb.memory.write_u8(0x100, 0x05);
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
 
     gb.adc(0xCE).unwrap(); // ADC A, n

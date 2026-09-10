@@ -1,4 +1,4 @@
-use crate::cpu::{AluOp, Reg8, Reg16};
+use crate::cpu::{AluOp, Gbz80, Reg8, Reg16};
 use crate::error::EmulatorError;
 use crate::gameboy::Gameboy;
 
@@ -52,7 +52,7 @@ impl Gameboy {
         self.cpu.set_flags(false, false, h, c); // Z = 0, N = 0
         Ok(())
     }
-    
+
     pub fn add(&mut self, opcode: u8) -> Result<(), EmulatorError> {
         if opcode < 0x80 {
             return self.add_16(opcode);
@@ -65,28 +65,37 @@ impl Gameboy {
         self.cpu.a = self.cpu.a.wrapping_add(val);
 
         self.cpu.set_flags(z,n,h,c);
-        return Ok(());
+        Ok(())
     }
 
+    pub fn adc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
+        let val = self.get_alu_operand(opcode);
+        let (z,n,h,c) = self.cpu.flags_from_adc(val, self.cpu.a);
+
+        self.cpu.a = self.cpu.a.wrapping_add(val).wrapping_add(self.cpu.get_flag(Gbz80::FLAG_C) as u8);
+
+        self.cpu.set_flags(z,n,h,c);
+        Ok(())
+    }
+
+    pub fn sub(&mut self, opcode: u8) -> Result<(), EmulatorError> {
+        let val = self.get_alu_operand(opcode);
+        let (z,n,h,c) = self.cpu.flags_from_sub(self.cpu.a, val);
+
+        self.cpu.a = self.cpu.a.wrapping_sub(val);
+
+        self.cpu.set_flags(z,n,h,c);
+
+        Ok(())
+    }
     pub fn sbc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
         Err(EmulatorError::NotImplementedOpcode(
             opcode,
             self.cpu.program_counter,
         ))
     }
-    pub fn sub(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(
-            opcode,
-            self.cpu.program_counter,
-        ))
-    }
+
     pub fn and(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(
-            opcode,
-            self.cpu.program_counter,
-        ))
-    }
-    pub fn adc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
         Err(EmulatorError::NotImplementedOpcode(
             opcode,
             self.cpu.program_counter,

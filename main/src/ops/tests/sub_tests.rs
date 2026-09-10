@@ -31,7 +31,11 @@ fn test_sub_all_r8() {
 
         gb.sub(opcode).unwrap();
 
-        assert_eq!(gb.cpu.a, 0x20, "SUB A,{:?} failed", reg);
+        if reg == Reg8::A {
+            assert_eq!(gb.cpu.a, 0x00, "SUB A,{:?} failed", reg); // A - A = 0
+        } else {
+            assert_eq!(gb.cpu.a, 0x20, "SUB A,{:?} failed", reg);
+        }
         assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
     }
 }
@@ -54,7 +58,7 @@ fn test_sub_a_n8() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x30;
     gb.cpu.program_counter = 0x100;
-    gb.memory.write_u8(0x101, 0x10);
+    gb.memory.write_u8(0x100, 0x10);
 
     gb.sub(0xD6).unwrap();
 
@@ -81,9 +85,9 @@ fn test_sub_half_borrow() {
     gb.sub(0x90).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
 
-    // 0x20 - 0x01 = 0x1F -> H clear
+    // 0x11 - 0x01 = 0x10 -> H clear
     let mut gb2 = Gameboy::new();
-    gb2.cpu.a = 0x20;
+    gb2.cpu.a = 0x11;
     gb2.cpu.b = 0x01;
     gb2.sub(0x90).unwrap();
     assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);

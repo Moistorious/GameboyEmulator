@@ -84,28 +84,45 @@ impl Gbz80 {
         }
     }
 
-    pub fn add_carry_16(&self, a:u16, b:u16) -> bool {
-        (a as u32) + (b as u32) > 0xFFFF
-    }
-
-    pub fn add_half_carry_16(&self, a:u16, b:u16) -> bool {
-        (a & 0xFFF) + (b & 0xFFF) > 0xFFF
-    }
-
     pub fn flags_from_16bit_add(&mut self, a:u16, b:u16) -> (bool, bool, bool, bool) {
-        (false,false, self.add_half_carry_16(a,b), self.add_carry_16(a,b))
-    }
-
-    pub fn add_carry(&self, a:u8, b:u8) -> bool {
-        (a as u16) + (b as u16) > 0xFF
-    }
-
-    pub fn add_half_carry(&self, a:u8, b:u8) -> bool {
-        (a & 0xF) + (b & 0xF) > 0xF
+        (
+            a.wrapping_add(b) == 0, // Z: Zero
+            false, // N: Subtraction
+            (a & 0xFFF) + (b & 0xFFF) > 0xFFF, // H: Half Carry
+            (a as u32) + (b as u32) > 0xFFF// C: Carry
+        )
     }
 
     pub fn flags_from_add(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
-        (a.wrapping_add(b) == 0,false, self.add_half_carry(a,b), self.add_carry(a,b))
+        (
+            a.wrapping_add(b) == 0, // Z: Zero
+            false, // N: Subtraction
+            (a & 0xF) + (b & 0xF) > 0xF, // H: Half Carry
+            (a as u16) + (b as u16) > 0xFF // C: Carry
+        )
+    }
+    
+    pub fn flags_from_adc(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
+        let carry = self.get_flag(Self::FLAG_C) as u8;
+        (
+            a.wrapping_add(b)
+                .wrapping_add(carry) == 0, // Z: Zero
+            false, // N: Subtraction
+            (a & 0xF) + (b & 0xF) + carry > 0xF, // H: Half Carry
+            (a as u16) + (b as u16) + carry as u16 > 0xFF // C: Carry
+        )
+    }
+
+    pub fn sub_carry(&self, a:u8, b:u8) -> bool {
+        a < b
+    }
+
+    pub fn sub_half_carry(&self, a:u8, b:u8) -> bool {
+        (a & 0xF) < (b & 0xF)
+    }
+
+    pub fn flags_from_sub(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
+        (a.wrapping_sub(b) == 0, true, self.sub_half_carry(a,b), self.sub_carry(a,b))
     }
 
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
@@ -149,12 +166,16 @@ impl Gbz80 {
         self.l = value as u8;
     }
 
-    pub fn set_flag(&mut self, flag: u8, value: bool){
+    pub fn set_flag(&mut self, flag: u8, value: bool) {
         if value {
             self.write_reg8(Reg8::F, self.reg8(Reg8::F) | flag);
         }else{
             self.write_reg8(Reg8::F, self.reg8(Reg8::F) & !flag);
         }
+    }
+
+    pub fn get_flag(&self, flag: u8) -> bool {
+        self.f & flag != 0
     }
 
     pub fn reg16(&self, reg: Reg16) -> u16 {
