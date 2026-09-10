@@ -7,7 +7,7 @@ pub enum Reg8 {
     E,
     H,
     L,
-    F,
+    HLIndirect,
     A,
 }
 
@@ -28,7 +28,7 @@ impl TryFrom<u8> for Reg8 {
             3 => Ok(Reg8::E),
             4 => Ok(Reg8::H),
             5 => Ok(Reg8::L),
-            6 => Ok(Reg8::F),
+            6 => Ok(Reg8::HLIndirect),
             7 => Ok(Reg8::A),
             _ => Err("Cannot convert value to reg8"),
         }
@@ -85,6 +85,10 @@ impl Gbz80 {
             (a & 0xFFF) + (b & 0xFFF) > 0xFFF, // H: Half Carry
             (a as u32) + (b as u32) > 0xFFF// C: Carry
         )
+    }
+
+    pub fn reg8_from_opcode(&self, opcode:u8) -> Reg8 {
+        Reg8::from_u8(opcode & 0x07)
     }
 
     pub fn flags_from_add(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
@@ -170,9 +174,9 @@ impl Gbz80 {
 
     pub fn set_flag(&mut self, flag: u8, value: bool) {
         if value {
-            self.write_reg8(Reg8::F, self.reg8(Reg8::F) | flag);
+            self.f |= flag;
         }else{
-            self.write_reg8(Reg8::F, self.reg8(Reg8::F) & !flag);
+            self.f &= !flag;
         }
     }
 
@@ -197,7 +201,7 @@ impl Gbz80 {
             Reg8::E => self.e,
             Reg8::H => self.h,
             Reg8::L => self.l,
-            Reg8::F => self.f,
+            Reg8::HLIndirect => unreachable!(),
             Reg8::A => self.a,
         }
     }
@@ -210,7 +214,7 @@ impl Gbz80 {
             Reg8::E => self.e = value,
             Reg8::H => self.h = value,
             Reg8::L => self.l = value,
-            Reg8::F => self.f = value,
+            Reg8::HLIndirect => unreachable!(),
             Reg8::A => self.a = value,
         }
     }

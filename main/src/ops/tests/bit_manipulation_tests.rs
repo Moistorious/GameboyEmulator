@@ -58,12 +58,12 @@ fn test_bit_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x80);
-    gb.bit(bit_opcode(7, Reg8::F)).unwrap(); // BIT 7,(HL) = 0x7E? BIT b,(HL) = 0xCB low nibble 6
+    gb.bit(bit_opcode(7, Reg8::HLIndirect)).unwrap(); // BIT 7,(HL) = 0x7E? BIT b,(HL) = 0xCB low nibble 6
     // Actually BIT 7,(HL) opcode low bits are 6 (for (HL)); here we test the memory path via reg=F (6)
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
 
     gb.memory.write_u8(0xC000, 0x00);
-    gb.bit(bit_opcode(7, Reg8::F)).unwrap();
+    gb.bit(bit_opcode(7, Reg8::HLIndirect)).unwrap();
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
 }
 
@@ -101,7 +101,7 @@ fn test_set_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x00);
-    gb.set(set_opcode(3, Reg8::F)).unwrap(); // SET 3,(HL)
+    gb.set(set_opcode(3, Reg8::HLIndirect)).unwrap(); // SET 3,(HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x08);
 }
 
@@ -140,7 +140,7 @@ fn test_res_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0xFF);
-    gb.res(res_opcode(3, Reg8::F)).unwrap(); // RES 3,(HL)
+    gb.res(res_opcode(3, Reg8::HLIndirect)).unwrap(); // RES 3,(HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0xF7);
 }
 

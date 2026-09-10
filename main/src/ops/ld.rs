@@ -10,7 +10,7 @@ impl Gameboy {
             // LD (HL),r
             0x70..=0x75 | 0x77 => self.ld_hl_r(opcode),
             // LD r,r
-            0x40..=0x7F => self.ld_r_r(opcode),
+            0x40..=0x7F => unreachable!(),
 
             // LD r,n
             0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x3E | 0x36 => self.ld_r_n(opcode),
@@ -58,26 +58,22 @@ impl Gameboy {
         Ok(())
     }
 
-    fn ld_r_r(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        let (_, dest, src) = self.decode_opcode(opcode);
-
-        if dest == 6 && src == 6 {
+    pub fn ld_r_r(&mut self, dest: Reg8, source: Reg8) -> Result<(), EmulatorError> {
+        if dest == source && dest == Reg8::HLIndirect {
             // LD (HL),(HL) is actually HALT, not LD
             return self.halt();
         }
 
-        let value = if src == 6 {
-            let addr = self.cpu.reg16(Reg16::HL);
-            self.memory.read_u8(addr)
+        let value = if source == Reg8::HLIndirect {
+            self.memory.read_u8(self.cpu.reg16(Reg16::HL))
         } else {
-            self.cpu.reg8(Reg8::from_u8(src))
+            self.cpu.reg8(source)
         };
 
-        if dest == 6 {
-            let addr = self.cpu.reg16(Reg16::HL);
-            self.memory.write_u8(addr, value);
+        if dest == Reg8::HLIndirect {
+            self.memory.write_u8(self.cpu.reg16(Reg16::HL), value);
         } else {
-            self.cpu.write_reg8(Reg8::from_u8(dest), value);
+            self.cpu.write_reg8(dest, value);
         };
         Ok(())
     }

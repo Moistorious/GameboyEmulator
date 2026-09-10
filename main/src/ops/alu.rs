@@ -15,7 +15,7 @@ impl Gameboy {
                 5 => self.cpu.l,
                 6 => self.memory.read_u8(self.cpu.hl()),
                 7 => self.cpu.a,
-                _ => 0 // Can't happen since we're ANDing with 7
+                _ => unreachable!()
             }
         } else {
             self.read_u8_increment_pc() // returns the next byte
@@ -28,7 +28,7 @@ impl Gameboy {
             1 => self.cpu.de(),
             2 => self.cpu.hl(),
             3=> self.cpu.stack_pointer,
-            _ => return Err(EmulatorError::InvalidOpcode(opcode, self.cpu.stack_pointer - 1))
+            _ => unreachable!()
         };
         let (z,n,h,c) = self.cpu.flags_from_16bit_add(source, self.cpu.hl());
 

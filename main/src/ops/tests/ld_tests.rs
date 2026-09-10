@@ -25,13 +25,14 @@ fn test_all_ld_reg8_to_reg8_instructions() {
 
             let opcode = ld_opcode(dest, src);
             let mut gameboy = Gameboy::new();
+            gameboy.memory.write_u8(0, opcode);
 
             // initialize dest with 0x00 and src with 0xAB
             gameboy.cpu.write_reg8(dest, 0x00);
             gameboy.cpu.write_reg8(src, 0xAB);
 
             // execute LD dest,src
-            gameboy.ld(opcode).unwrap();
+            gameboy.ld_r_r(dest,src).unwrap();
 
             // dest should equal src after the LD
             assert_eq!(
@@ -454,8 +455,8 @@ fn test_ld_hl_mem_n8() {
 fn test_ld_hl_hl_halt() {
     let mut gb = Gameboy::new();
     gb.running = true;
-
-    gb.ld(0x76).unwrap(); // LD (HL),(HL) decodes to HALT
+    gb.memory.write_u8(0x00, 0x76);
+    gb.step().unwrap(); // LD (HL),(HL) decodes to HALT
 
     assert_eq!(gb.running, false, "LD (HL),(HL) should halt the CPU");
 }

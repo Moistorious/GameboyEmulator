@@ -1,4 +1,4 @@
-use crate::cpu::Gbz80;
+use crate::cpu::{Gbz80, Reg8};
 use crate::error::EmulatorError;
 use crate::memory::GbMemory;
 use crate::cartridge::Cartridge;
@@ -65,16 +65,43 @@ impl Gameboy {
     }
 
     pub fn decode_opcode(&self, opcode: u8) -> (u8, u8, u8) {
-        let group = opcode >> 6;
-        let dest = (opcode >> 3) & 0x07;
-        let source = opcode & 0x07;
-        (group, dest, source)
+        let x = opcode >> 6;
+        let y = (opcode >> 3) & 0x07;
+        let z = opcode & 0x07;
+        (x, y, z)
+    }
+
+    pub fn execute_group_0(&mut self, y:u8, z:u8){
+
+    }
+
+    pub fn execute_group_1(&mut self, y:u8, z:u8){
+        let dest = Reg8::from_u8(y);
+        let source = Reg8::from_u8(z);
+        self.ld_r_r(dest, source);
+    }
+    
+    pub fn execute_group_2(&mut self, y:u8, z:u8){
+
+    }
+    
+    pub fn execute_group_3(&mut self, opcode:u8, y:u8, z:u8){
+
     }
 
     pub fn step(&mut self) -> Result<(), EmulatorError> {
         // Opcode Byte: [ Bit 7 | Bit 6 ] [ Bit 5 | Bit 4 | Bit 3 ] [ Bit 2 | Bit 1 | Bit 0 ]
         //                Group (x)         Destination (y)            Source (z)
         let opcode = self.read_u8_increment_pc();
+        let (x,y,z) = self.decode_opcode(opcode);
+
+        match x {
+            0 => self.execute_group_0(y, z),
+            1 => self.execute_group_1(y, z),
+            2 => self.execute_group_2(y, z),
+            3 => self.execute_group_3(opcode, y, z),
+            _ => unreachable!()
+        }
 
         match opcode {
             0x00 => self.nop(opcode),
