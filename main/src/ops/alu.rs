@@ -1,4 +1,4 @@
-use crate::cpu::{Gbz80, Reg8, Reg16};
+use crate::cpu::{Gbz80};
 use crate::error::EmulatorError;
 use crate::gameboy::Gameboy;
 

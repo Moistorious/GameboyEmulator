@@ -121,7 +121,7 @@ impl Gbz80 {
         (
             a.wrapping_sub(b)
                 .wrapping_sub(carry) == 0, // Z: Zero
-            false, // N: Subtraction
+            true, // N: Subtraction
             (a & 0xF) < ((b & 0xF) + carry), // H: Half Carry
             (a as u16) < (b as u16 + carry as u16) // C: Carry
         )
