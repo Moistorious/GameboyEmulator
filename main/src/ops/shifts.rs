@@ -1,36 +1,35 @@
 use crate::gameboy::Gameboy;
-use crate::error::EmulatorError;
 
 impl Gameboy {
-    pub fn rlc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn rlc(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn rrc(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn rrc(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn rl(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn rl(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn rr(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn rr(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn sla(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn sla(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn sra(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn sra(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn swap(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn swap(&mut self, _opcode: u8) {
+        todo!()
     }
 
-    pub fn srl(&mut self, opcode: u8) -> Result<(), EmulatorError> {
-        Err(EmulatorError::NotImplementedOpcode(opcode, self.cpu.program_counter))
+    pub fn srl(&mut self, _opcode: u8) {
+        todo!()
     }
 }

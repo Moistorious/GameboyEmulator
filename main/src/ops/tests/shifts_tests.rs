@@ -11,7 +11,7 @@ fn test_rlc() {
     // RLC A (0x07)
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x85; // 1000 0101
-    gb.rlc(0x07).unwrap();
+    gb.rlc(0x07);
     assert_eq!(gb.cpu.a, 0x0B); // 0000 1011
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -21,7 +21,7 @@ fn test_rlc() {
     // RLC of 0x00 -> 0x00, Z=1, C=0
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x00;
-    gb2.rlc(0x07).unwrap();
+    gb2.rlc(0x07);
     assert_eq!(gb2.cpu.a, 0x00);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
@@ -29,7 +29,7 @@ fn test_rlc() {
     // RLC of 0x80 -> 0x01, C=1
     let mut gb3 = Gameboy::new();
     gb3.cpu.a = 0x80;
-    gb3.rlc(0x07).unwrap();
+    gb3.rlc(0x07);
     assert_eq!(gb3.cpu.a, 0x01);
     assert!(gb3.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb3.cpu.f & Gbz80::FLAG_Z == 0);
@@ -42,7 +42,7 @@ fn test_rlc_all_regs() {
         let mut gb = Gameboy::new();
         let opcode = reg as u8;
         gb.cpu.write_reg8(reg, 0x40);
-        gb.rlc(opcode).unwrap();
+        gb.rlc(opcode);
         assert_eq!(gb.cpu.reg8(reg), 0x80, "RLC {:?} failed", reg);
         assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
         assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -54,7 +54,7 @@ fn test_rlc_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x80);
-    gb.rlc(0x06).unwrap(); // RLC (HL)
+    gb.rlc(0x06); // RLC (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x01);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 }
@@ -63,7 +63,7 @@ fn test_rlc_hl_mem() {
 fn test_rrc() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x01;
-    gb.rrc(0x0F).unwrap();
+    gb.rrc(0x0F);
     assert_eq!(gb.cpu.a, 0x80);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -73,7 +73,7 @@ fn test_rrc() {
     // RRC of 0x00 -> 0x00, Z=1
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x00;
-    gb2.rrc(0x0F).unwrap();
+    gb2.rrc(0x0F);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -83,7 +83,7 @@ fn test_rrc_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x80);
-    gb.rrc(0x0E).unwrap(); // RRC (HL)
+    gb.rrc(0x0E); // RRC (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x40);
     assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -94,7 +94,7 @@ fn test_rl() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x80;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.rl(0x17).unwrap();
+    gb.rl(0x17);
     assert_eq!(gb.cpu.a, 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -105,7 +105,7 @@ fn test_rl() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x00;
     gb2.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb2.rl(0x17).unwrap();
+    gb2.rl(0x17);
     assert_eq!(gb2.cpu.a, 0x01);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z == 0);
@@ -117,7 +117,7 @@ fn test_rl_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x11);
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.rl(0x16).unwrap(); // RL (HL)
+    gb.rl(0x16); // RL (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x23);
     assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -128,7 +128,7 @@ fn test_rr() {
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x01;
     gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.rr(0x1F).unwrap();
+    gb.rr(0x1F);
     assert_eq!(gb.cpu.a, 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -139,7 +139,7 @@ fn test_rr() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x00;
     gb2.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb2.rr(0x1F).unwrap();
+    gb2.rr(0x1F);
     assert_eq!(gb2.cpu.a, 0x80);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -150,7 +150,7 @@ fn test_rr_hl_mem() {
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x88);
     gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.rr(0x1E).unwrap(); // RR (HL)
+    gb.rr(0x1E); // RR (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0xC4);
     assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -160,7 +160,7 @@ fn test_sla() {
     // SLA A: shifts left into carry, bit0=0
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x80;
-    gb.sla(0x27).unwrap();
+    gb.sla(0x27);
     assert_eq!(gb.cpu.a, 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -170,7 +170,7 @@ fn test_sla() {
     // SLA of 0x01 -> 0x02, C=0
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x01;
-    gb2.sla(0x27).unwrap();
+    gb2.sla(0x27);
     assert_eq!(gb2.cpu.a, 0x02);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -180,7 +180,7 @@ fn test_sla_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0xFF);
-    gb.sla(0x26).unwrap(); // SLA (HL)
+    gb.sla(0x26); // SLA (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0xFE);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
 }
@@ -190,7 +190,7 @@ fn test_sra() {
     // SRA A: arithmetic shift right, bit7 preserved
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x81; // 1000 0001
-    gb.sra(0x2F).unwrap();
+    gb.sra(0x2F);
     assert_eq!(gb.cpu.a, 0xC0); // 1100 0000
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -198,7 +198,7 @@ fn test_sra() {
     // SRA of positive 0x01 -> 0x00
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x01;
-    gb2.sra(0x2F).unwrap();
+    gb2.sra(0x2F);
     assert_eq!(gb2.cpu.a, 0x00);
     assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
@@ -209,7 +209,7 @@ fn test_sra_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x01);
-    gb.sra(0x2E).unwrap(); // SRA (HL)
+    gb.sra(0x2E); // SRA (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
@@ -220,7 +220,7 @@ fn test_swap() {
     // SWAP A: exchange high/low nibbles, C reset
     let mut gb = Gameboy::new();
     gb.cpu.a = 0xF0;
-    gb.swap(0x37).unwrap();
+    gb.swap(0x37);
     assert_eq!(gb.cpu.a, 0x0F);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
     assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
@@ -230,7 +230,7 @@ fn test_swap() {
     // SWAP producing zero -> Z=1
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x00;
-    gb2.swap(0x37).unwrap();
+    gb2.swap(0x37);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
 }
@@ -240,7 +240,7 @@ fn test_swap_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x12);
-    gb.swap(0x36).unwrap(); // SWAP (HL)
+    gb.swap(0x36); // SWAP (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x21);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
 }
@@ -250,7 +250,7 @@ fn test_srl() {
     // SRL A: logical shift right, bit7=0
     let mut gb = Gameboy::new();
     gb.cpu.a = 0x81; // 1000 0001
-    gb.srl(0x3F).unwrap();
+    gb.srl(0x3F);
     assert_eq!(gb.cpu.a, 0x40); // 0100 0000
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
@@ -260,7 +260,7 @@ fn test_srl() {
     // SRL of 0x01 -> 0x00, C=1, Z=1
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x01;
-    gb2.srl(0x3F).unwrap();
+    gb2.srl(0x3F);
     assert_eq!(gb2.cpu.a, 0x00);
     assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
@@ -271,7 +271,7 @@ fn test_srl_hl_mem() {
     let mut gb = Gameboy::new();
     gb.cpu.set_hl(0xC000);
     gb.memory.write_u8(0xC000, 0x01);
-    gb.srl(0x3E).unwrap(); // SRL (HL)
+    gb.srl(0x3E); // SRL (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x00);
     assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
     assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);

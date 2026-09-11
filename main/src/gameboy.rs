@@ -1,5 +1,4 @@
-use crate::cpu::{Gbz80, Reg8};
-use crate::error::EmulatorError;
+use crate::cpu::{Gbz80, Reg8, Reg16};
 use crate::memory::GbMemory;
 use crate::cartridge::Cartridge;
 use std::fs::File;
@@ -50,14 +49,12 @@ impl Gameboy {
         len as u16
     }
 
-    pub fn nop(&mut self, _opcode: u8) -> Result<(),EmulatorError> {
+    pub fn nop(&mut self, _opcode: u8) {
         self.cpu.program_counter += 1;
-        Ok(())
     }
-    
-    pub fn halt(&mut self) -> Result<(), EmulatorError> {
+
+    pub fn halt(&mut self) {
         self.running = false;
-        Ok(())
     }
 
     pub fn opcode_dest_register(opcode: u8) -> u8 {
@@ -72,13 +69,33 @@ impl Gameboy {
     }
 
     pub fn execute_group_0(&mut self, y:u8, z:u8){
-
+        match z{
+            0x00 => todo!(),
+            0x01 => todo!(),
+            0x02 => match y {
+                        0x00 => self.ld_rr_a(Reg16::BC),
+                        0x01 => self.ld_rr_a(Reg16::DE),
+                        0x02 => self.ld_hli(Reg16::HL),
+                        0x03 => self.ld_hld(Reg16::HL),
+                        _ => unreachable!()
+            },
+            0x03 => todo!(),
+            0x04 => todo!(),
+            0x05 => todo!(),
+            0x06 => todo!(),
+            0x07 => todo!(),
+            _ => unreachable!()
+        }
     }
 
     pub fn execute_group_1(&mut self, y:u8, z:u8){
         let dest = Reg8::from_u8(y);
         let source = Reg8::from_u8(z);
-        self.ld_r_r(dest, source);
+        if dest == source && source == Reg8::HLIndirect {
+            self.halt();
+        }else{
+            self.ld_r_r(dest, source);
+        }
     }
     
     pub fn execute_group_2(&mut self, y:u8, z:u8){
@@ -89,7 +106,7 @@ impl Gameboy {
 
     }
 
-    pub fn step(&mut self) -> Result<(), EmulatorError> {
+    pub fn step(&mut self) {
         // Opcode Byte: [ Bit 7 | Bit 6 ] [ Bit 5 | Bit 4 | Bit 3 ] [ Bit 2 | Bit 1 | Bit 0 ]
         //                Group (x)         Destination (y)            Source (z)
         let opcode = self.read_u8_increment_pc();
@@ -105,7 +122,6 @@ impl Gameboy {
 
         match opcode {
             0x00 => self.nop(opcode),
-            0x76 => self.halt(),
 
             // <LD
             0x40..=0x7F | 
@@ -149,7 +165,7 @@ impl Gameboy {
                 }
             },
 
-            _ => Err(EmulatorError::InvalidOpcode(opcode, self.cpu.program_counter))
+            _ => todo!()
         }
 
 
