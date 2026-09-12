@@ -5,14 +5,14 @@ impl Gameboy {
     pub fn ld(&mut self, opcode: u8) {
         match opcode {
             // LD r,(HL)
-            0x46 | 0x4E | 0x56 | 0x5E | 0x66 | 0x6E | 0x7E => self.ld_r_hl(opcode),
+            //0x46 | 0x4E | 0x56 | 0x5E | 0x66 | 0x6E | 0x7E => self.ld_r_hl(opcode),
             // LD (HL),r
-            0x70..=0x75 | 0x77 => self.ld_hl_r(opcode),
+            //0x70..=0x75 | 0x77 => self.ld_hl_r(opcode),
             // LD r,r
-            0x40..=0x7F => unreachable!(),
+            //0x40..=0x7F => unreachable!(),
 
             // LD r,n
-            0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x3E | 0x36 => self.ld_r_n(opcode),
+            //0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x3E | 0x36 => self.ld_r_n(opcode),
 
             // LD A,(rr)
             0x0A => self.ld_a_rr(Reg16::BC),
@@ -27,7 +27,7 @@ impl Gameboy {
             0x01 => self.ld_rr_nn(Reg16::BC),
             0x11 => self.ld_rr_nn(Reg16::DE),
             0x21 => self.ld_rr_nn(Reg16::HL),
-            0x31 => self.ld_sp_nn(),
+            0x31 => self.ld_rr_nn(Reg16::SP),
             0xF9 => self.ld_sp_hl(),
             0xF8 => self.ld_hl_sp_e8(),
             0x08 => self.ld_nn_sp(),
@@ -70,31 +70,14 @@ impl Gameboy {
         };
     }
 
-    pub fn ld_r_n(&mut self, opcode: u8) {
-        let (_, dest, _) = self.decode_opcode(opcode);
+    pub fn ld_r_n(&mut self, dest: Reg8) {
         let imm = self.read_u8_increment_pc();
 
-        if dest == 6 {
+        if dest == Reg8::HLIndirect {
             self.memory.write_u8(self.cpu.reg16(Reg16::HL), imm);
         } else {
-            self.cpu.write_reg8(Reg8::from_u8(dest), imm);
+            self.cpu.write_reg8(dest, imm);
         };
-    }
-
-    pub fn ld_r_hl(&mut self, opcode: u8) {
-        // opcode format: 01ddd110, where ddd is the destination register
-        let (_, dest, _) = self.decode_opcode(opcode);
-        self.cpu.write_reg8(
-            Reg8::from_u8(dest), 
-            self.memory.read_u8(self.cpu.hl()));
-    }
-
-    pub fn ld_hl_r(&mut self, opcode: u8) {
-        let (_, _, source) = self.decode_opcode(opcode);
-        self.memory.write_u8(
-            self.cpu.reg16(Reg16::HL),
-            self.cpu.reg8(Reg8::from_u8(source)),
-        );
     }
 
     pub fn ld_a_rr(&mut self, rr: Reg16) {
@@ -108,17 +91,17 @@ impl Gameboy {
         let value = self.cpu.reg8(Reg8::A);
         self.memory.write_u8(addr, value);
     }
-    pub fn ld_hli(&mut self, rr: Reg16) {
-        let addr = self.cpu.reg16(rr);
+    pub fn ld_hli_a(&mut self) {
+        let addr = self.cpu.reg16(Reg16::HL);
         let value = self.cpu.reg8(Reg8::A);
-        self.cpu.write_reg16(rr, self.cpu.reg16(rr).wrapping_add(1));
+        self.cpu.write_reg16(Reg16::HL, self.cpu.reg16(Reg16::HL).wrapping_add(1));
         self.memory.write_u8(addr, value);
     }
 
-    pub fn ld_hld(&mut self, rr: Reg16) {
-        let addr = self.cpu.reg16(rr);
+    pub fn ld_hld_a(&mut self) {
+        let addr = self.cpu.reg16(Reg16::HL);
         let value = self.cpu.reg8(Reg8::A);
-        self.cpu.write_reg16(rr, self.cpu.reg16(rr).wrapping_sub(1));
+        self.cpu.write_reg16(Reg16::HL, self.cpu.reg16(Reg16::HL).wrapping_sub(1));
         self.memory.write_u8(addr, value);
     }
 

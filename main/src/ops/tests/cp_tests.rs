@@ -1,4 +1,4 @@
-use crate::cpu::{Reg8, Gbz80};
+use crate::cpu::{Flag, Reg8};
 use crate::gameboy::Gameboy;
 
 // CP r     = 0xB8 + r
@@ -15,10 +15,10 @@ fn test_cp_r8() {
     gb.cp(0xB8);
 
     assert_eq!(gb.cpu.a, 0x30, "CP must not modify A");
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
+    assert!(!gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -32,13 +32,13 @@ fn test_cp_all_r8() {
 
         gb.cp(opcode);
 
-        assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.get_flag(Flag::N));
         if reg == Reg8::A {
             assert_eq!(gb.cpu.a, 0x10, "CP {:?} must not modify A", reg);
-            assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+            assert!(gb.cpu.get_flag(Flag::Z));
         } else {
             assert_eq!(gb.cpu.a, 0x30, "CP {:?} must not modify A", reg);
-            assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+            assert!(!gb.cpu.get_flag(Flag::Z));
         }
     }
 }
@@ -53,8 +53,8 @@ fn test_cp_a_hl_mem() {
     gb.cp(0xBE);
 
     assert_eq!(gb.cpu.a, 0x30);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -67,8 +67,8 @@ fn test_cp_a_n8() {
     gb.cp(0xFE);
 
     assert_eq!(gb.cpu.a, 0x30);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn test_cp_half_borrow() {
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x01;
     gb.cp(0xB8);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 }
 
 #[test]
@@ -86,6 +86,6 @@ fn test_cp_borrow() {
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x01;
     gb.cp(0xB8);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::C));
+    assert!(gb.cpu.get_flag(Flag::N));
 }

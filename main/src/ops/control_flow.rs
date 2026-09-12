@@ -1,8 +1,16 @@
-use crate::gameboy::Gameboy;
+use crate::{cpu::Flag, gameboy::Gameboy};
 
 impl Gameboy {
     pub fn jp(&mut self, _opcode: u8) {
         todo!()
+    }
+
+    pub fn jr_f(&mut self, _flag: Flag){
+
+    }
+    
+    pub fn jr_nf(&mut self, _flag: Flag){
+
     }
 
     pub fn jr(&mut self, _opcode: u8) {

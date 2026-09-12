@@ -1,4 +1,4 @@
-use crate::cpu::{Reg16, Reg8, Gbz80};
+use crate::cpu::{Flag, Reg16, Reg8};
 use crate::gameboy::Gameboy;
 
 fn ld_opcode(dest: Reg8, src: Reg8) -> u8 {
@@ -50,58 +50,58 @@ fn test_all_ld_reg8_to_reg8_instructions() {
 //
 // LD r,(HL)
 //
-#[test]
-fn test_ld_r_from_hl() {
-    let regs = [
-        Reg8::B,
-        Reg8::C,
-        Reg8::D,
-        Reg8::E,
-        Reg8::H,
-        Reg8::L,
-        Reg8::A,
-    ];
+// #[test]
+// fn test_ld_r_from_hl() {
+//     let regs = [
+//         Reg8::B,
+//         Reg8::C,
+//         Reg8::D,
+//         Reg8::E,
+//         Reg8::H,
+//         Reg8::L,
+//         Reg8::A,
+//     ];
 
-    for &dest in &regs {
-        let opcode = 0x46 | ((dest as u8) << 3); // LD r,(HL)
+//     for &dest in &regs {
+//         let opcode = 0x46 | ((dest as u8) << 3); // LD r,(HL)
 
-        let mut gb = Gameboy::new();
-        gb.cpu.write_reg16(Reg16::HL, 0x1234);
-        gb.memory.write_u8(0x1234, 0x5A);
+//         let mut gb = Gameboy::new();
+//         gb.cpu.write_reg16(Reg16::HL, 0x1234);
+//         gb.memory.write_u8(0x1234, 0x5A);
 
-        gb.ld(opcode);
+//         gb.ld_r_hl(opcode);
 
-        assert_eq!(gb.cpu.reg8(dest), 0x5A, "LD {:?},(HL) failed", dest);
-    }
-}
+//         assert_eq!(gb.cpu.reg8(dest), 0x5A, "LD {:?},(HL) failed", dest);
+//     }
+// }
 
 //
 // LD (HL),r
 //
-#[test]
-fn test_ld_hl_from_r() {
-    let regs = [
-        Reg8::B,
-        Reg8::C,
-        Reg8::D,
-        Reg8::E,
-        Reg8::H,
-        Reg8::L,
-        Reg8::A,
-    ];
+// #[test]
+// fn test_ld_hl_from_r() {
+//     let regs = [
+//         Reg8::B,
+//         Reg8::C,
+//         Reg8::D,
+//         Reg8::E,
+//         Reg8::H,
+//         Reg8::L,
+//         Reg8::A,
+//     ];
 
-    for &src in &regs {
-        let opcode = 0x70 | (src as u8); // LD (HL),r
+//     for &src in &regs {
+//         let opcode = 0x70 | (src as u8); // LD (HL),r
 
-        let mut gb = Gameboy::new();
-        gb.cpu.write_reg16(Reg16::HL, 0x1F1F);
-        gb.cpu.write_reg8(src, 0x1F);
+//         let mut gb = Gameboy::new();
+//         gb.cpu.write_reg16(Reg16::HL, 0x1F1F);
+//         gb.cpu.write_reg8(src, 0x1F);
 
-        gb.ld(opcode);
+//         gb.ld_hl_r(opcode);
 
-        assert_eq!(gb.memory.read_u8(0x1F1F), 0x1F, "LD (HL),{:?} failed", src);
-    }
-}
+//         assert_eq!(gb.memory.read_u8(0x1F1F), 0x1F, "LD (HL),{:?} failed", src);
+//     }
+// }
 
 //
 // LD r,n (immediate)
@@ -109,21 +109,21 @@ fn test_ld_hl_from_r() {
 #[test]
 fn test_ld_r_n() {
     let tests = [
-        (Reg8::B, 0x06),
-        (Reg8::C, 0x0E),
-        (Reg8::D, 0x16),
-        (Reg8::E, 0x1E),
-        (Reg8::H, 0x26),
-        (Reg8::L, 0x2E),
-        (Reg8::A, 0x3E),
+        (Reg8::B),
+        (Reg8::C),
+        (Reg8::D),
+        (Reg8::E),
+        (Reg8::H),
+        (Reg8::L),
+        (Reg8::A),
     ];
 
-    for &(reg, opcode) in &tests {
+    for &reg in &tests {
         let mut gb = Gameboy::new();
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0x99); // pretend immediate at PC
 
-        gb.ld(opcode);
+        gb.ld_r_n(reg);
 
         assert_eq!(gb.cpu.reg8(reg), 0x99, "LD {:?},n failed", reg);
     }
@@ -136,12 +136,12 @@ fn test_ld_r_n() {
 fn test_ld_a_from_bc_de() {
     let tests = [(0x0A, Reg16::BC), (0x1A, Reg16::DE)];
 
-    for &(opcode, pair) in &tests {
+    for &(_opcode, pair) in &tests {
         let mut gb = Gameboy::new();
         gb.cpu.write_reg16(pair, 0x1FFF);
         gb.memory.write_u8(0x1FFF, 0x55);
 
-        gb.ld(opcode);
+        gb.ld_a_rr(pair);
 
         assert_eq!(gb.cpu.reg8(Reg8::A), 0x55, "LD A,({:?}) failed", pair);
     }
@@ -154,19 +154,16 @@ fn test_ld_a_from_bc_de() {
 fn test_ld_bc_de_from_a() {
     let tests = [(0x02, Reg16::BC), (0x12, Reg16::DE)];
 
-    for &(opcode, pair) in &tests {
+    for &(_opcode, pair) in &tests {
         let mut gb = Gameboy::new();
         gb.cpu.write_reg16(pair, 0x1FFF);
         gb.cpu.write_reg8(Reg8::A, 0x66);
 
-        gb.ld(opcode);
+        gb.ld_rr_a(pair);
 
         assert_eq!(gb.memory.read_u8(0x1FFF), 0x66, "LD ({:?}),A failed", pair);
     }
 }
-
-const LD_HLI_A: u8 = 0x22; // LD (HL+), A
-const LD_HLD_A: u8 = 0x32; // LD (HL-), A
 
 #[test]
 fn test_ld_hli_a_stores_a_and_increments_hl() {
@@ -178,7 +175,7 @@ fn test_ld_hli_a_stores_a_and_increments_hl() {
     let hl_before = gb.cpu.hl();
 
     // Execute
-    gb.ld(LD_HLI_A);
+    gb.ld_hli_a();
 
     // Check that A was written to memory at address HL
     let written = gb.memory.read_u8(hl_before);
@@ -198,7 +195,7 @@ fn test_ld_hld_a_stores_a_and_decrements_hl() {
     let hl_before = gb.cpu.hl();
 
     // Execute
-    gb.ld(LD_HLD_A);
+    gb.ld_hld_a();
 
     // Check that A was written to memory at address HL
     let written = gb.memory.read_u8(hl_before);
@@ -219,7 +216,7 @@ fn test_ld_hli_a_wrapping() {
     gb.cpu.write_reg16(Reg16::HL, 0xFFFF);
 
     // Execute LD (HL+), A
-    gb.ld(LD_HLI_A);
+    gb.ld_hli_a();
 
     // Check value and wrapping
     assert_eq!(gb.memory.read_u8(0xFFFF), 0xAB);
@@ -233,7 +230,7 @@ fn test_ld_hld_a_wrapping() {
     gb.cpu.write_reg16(Reg16::HL, 0x0000);
 
     // Execute LD (HL-), A
-    gb.ld(LD_HLD_A);
+    gb.ld_hld_a();
 
     // Check value and wrapping
     assert_eq!(gb.memory.read_u8(0x0000), 0xAB);
@@ -248,13 +245,13 @@ fn test_ld_rr_nn() {
         (0x21, Reg16::HL),
     ];
 
-    for &(opcode, pair) in &tests {
+    for &(_opcode, pair) in &tests {
         let mut gb = Gameboy::new();
         gb.cpu.program_counter = 0;
         // Write 0xABCD as the 16-bit immediate value at PC
         gb.memory.write_u16(0, 0xABCD);
 
-        gb.ld(opcode);
+        gb.ld_rr_nn(pair);
 
         assert_eq!(gb.cpu.reg16(pair), 0xABCD, "LD {:?},nn failed", pair);
         assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
@@ -267,7 +264,7 @@ fn test_ld_sp_nn() {
     gb.cpu.program_counter = 0;
     gb.memory.write_u16(0, 0xFFFE);
 
-    gb.ld(0x31); // LD SP, nn
+    gb.ld_sp_nn(); // LD SP, nn
 
     assert_eq!(gb.cpu.stack_pointer, 0xFFFE, "LD SP,nn failed");
     assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
@@ -280,7 +277,7 @@ fn test_ld_a_nn() {
     gb.memory.write_u16(0, 0xC000); // 16-bit address
     gb.memory.write_u8(0xC000, 0x77); // value at that address
 
-    gb.ld(0xFA); // LD A,(nn)
+    gb.ld_a_nn(); // LD A,(nn)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x77, "LD A,(nn) failed");
     assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
@@ -293,7 +290,7 @@ fn test_ld_nn_a() {
     gb.cpu.write_reg8(Reg8::A, 0x88);
     gb.memory.write_u16(0, 0xC000); // destination address
 
-    gb.ld(0xEA); // LD (nn),A
+    gb.ld_nn_a(); // LD (nn),A
 
     assert_eq!(gb.memory.read_u8(0xC000), 0x88, "LD (nn),A failed");
     assert_eq!(gb.cpu.program_counter, 2, "PC should have incremented by 2");
@@ -305,7 +302,7 @@ fn test_ld_a_hli() {
     gb.cpu.write_reg16(Reg16::HL, 0xC000);
     gb.memory.write_u8(0xC000, 0x44);
 
-    gb.ld(0x2A); // LD A,(HL+)
+    gb.ld_a_hli(); // LD A,(HL+)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x44);
     assert_eq!(gb.cpu.hl(), 0xC001);
@@ -317,7 +314,7 @@ fn test_ld_a_hld() {
     gb.cpu.write_reg16(Reg16::HL, 0xC005);
     gb.memory.write_u8(0xC005, 0x55);
 
-    gb.ld(0x3A); // LD A,(HL-)
+    gb.ld_a_hld(); // LD A,(HL-)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x55);
     assert_eq!(gb.cpu.hl(), 0xC004);
@@ -329,7 +326,7 @@ fn test_ld_a_c() {
     gb.cpu.write_reg8(Reg8::C, 0x10);
     gb.memory.write_u8(0xFF10, 0x66);
 
-    gb.ld(0xF2); // LD A,(C)
+    gb.ld_a_c(); // LD A,(C)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x66);
 }
@@ -340,7 +337,7 @@ fn test_ld_c_a() {
     gb.cpu.write_reg8(Reg8::C, 0x20);
     gb.cpu.write_reg8(Reg8::A, 0x77);
 
-    gb.ld(0xE2); // LD (C),A
+    gb.ld_c_a(); // LD (C),A
 
     assert_eq!(gb.memory.read_u8(0xFF20), 0x77);
 }
@@ -354,15 +351,15 @@ fn test_ld_hl_sp_e8() {
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0x10); // Offset = 16
 
-        gb.ld(0xF8); // LD HL,SP+e8
+        gb.ld_hl_sp_e8(); // LD HL,SP+e8
 
         assert_eq!(gb.cpu.hl(), 0x1010);
         assert_eq!(gb.cpu.program_counter, 1);
         // flags: Z=0, N=0, H=0, C=0
-        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(!gb.cpu.get_flag(Flag::Z));
+        assert!(!gb.cpu.get_flag(Flag::N));
+        assert!(!gb.cpu.get_flag(Flag::H));
+        assert!(!gb.cpu.get_flag(Flag::C));
     }
     // Negative offset
     {
@@ -371,12 +368,12 @@ fn test_ld_hl_sp_e8() {
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0xF0); // Offset = -16 (0xF0)
 
-        gb.ld(0xF8); // LD HL,SP+e8
+        gb.ld_hl_sp_e8(); // LD HL,SP+e8
 
         assert_eq!(gb.cpu.hl(), 0x0FF0);
         assert_eq!(gb.cpu.program_counter, 1);
-        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(!gb.cpu.get_flag(Flag::Z));
+        assert!(!gb.cpu.get_flag(Flag::N));
     }
 }
 
@@ -387,28 +384,28 @@ fn test_ld_hl_sp_e8_flags() {
     gb.cpu.stack_pointer = 0x000F;
     gb.cpu.program_counter = 0;
     gb.memory.write_u8(0, 0x01);
-    gb.ld(0xF8);
+    gb.ld_hl_sp_e8();
     assert_eq!(gb.cpu.hl(), 0x0010);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 
     // Carry: 0xFFFF + 0x01 = 0x0000 -> C=1
     let mut gb2 = Gameboy::new();
     gb2.cpu.stack_pointer = 0xFFFF;
     gb2.cpu.program_counter = 0;
     gb2.memory.write_u8(0, 0x01);
-    gb2.ld(0xF8);
+    gb2.ld_hl_sp_e8();
     assert_eq!(gb2.cpu.hl(), 0x0000);
-    assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb2.cpu.get_flag(Flag::C));
 
     // No half carry, no carry: 0x0010 + 0x01 = 0x0011
     let mut gb3 = Gameboy::new();
     gb3.cpu.stack_pointer = 0x0010;
     gb3.cpu.program_counter = 0;
     gb3.memory.write_u8(0, 0x01);
-    gb3.ld(0xF8);
-    assert!(gb3.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gb3.cpu.f & Gbz80::FLAG_C == 0);
-    assert!(gb3.cpu.f & Gbz80::FLAG_N == 0);
+    gb3.ld_hl_sp_e8();
+    assert!(!gb3.cpu.get_flag(Flag::H));
+    assert!(!gb3.cpu.get_flag(Flag::C));
+    assert!(!gb3.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -416,7 +413,7 @@ fn test_ld_sp_hl() {
     let mut gb = Gameboy::new();
     gb.cpu.write_reg16(Reg16::HL, 0x55AA);
 
-    gb.ld(0xF9); // LD SP,HL
+    gb.ld_sp_hl(); // LD SP,HL
 
     assert_eq!(gb.cpu.stack_pointer, 0x55AA);
 }
@@ -428,7 +425,7 @@ fn test_ld_nn_sp() {
     gb.cpu.program_counter = 0;
     gb.memory.write_u16(0, 0xC500);
 
-    gb.ld(0x08); // LD (nn),SP
+    gb.ld_nn_sp(); // LD (nn),SP
 
     assert_eq!(gb.memory.read_u16(0xC500), 0x9988);
     assert_eq!(gb.cpu.program_counter, 2);
@@ -441,7 +438,7 @@ fn test_ld_hl_mem_n8() {
     gb.cpu.program_counter = 0;
     gb.memory.write_u8(0, 0xBC);
 
-    gb.ld(0x36); // LD (HL),n
+    gb.ld_r_n(Reg8::HLIndirect); // LD (HL),n
 
     assert_eq!(gb.memory.read_u8(0xC000), 0xBC);
     assert_eq!(gb.cpu.program_counter, 1);
@@ -474,7 +471,7 @@ fn test_ld_r_r_preserves_flags() {
 
 #[test]
 fn test_ld_preserves_flags() {
-    // Representative LD opcodes across the surface
+    // Representative LD operations across the surface
     let opcodes = [0x06, 0x01, 0x0A, 0x02, 0x22, 0xFA, 0xEA, 0x2A, 0xF2, 0xE2, 0xF9];
 
     for opcode in opcodes {
@@ -493,7 +490,20 @@ fn test_ld_preserves_flags() {
         gb.cpu.f = 0xF0;
         let flags_before = gb.cpu.f;
 
-        gb.ld(opcode);
+        match opcode {
+            0x06 => gb.ld_r_n(Reg8::B),
+            0x01 => gb.ld_rr_nn(Reg16::BC),
+            0x0A => gb.ld_a_rr(Reg16::BC),
+            0x02 => gb.ld_rr_a(Reg16::BC),
+            0x22 => gb.ld_hli_a(),
+            0xFA => gb.ld_a_nn(),
+            0xEA => gb.ld_nn_a(),
+            0x2A => gb.ld_a_hli(),
+            0xF2 => gb.ld_a_c(),
+            0xE2 => gb.ld_c_a(),
+            0xF9 => gb.ld_sp_hl(),
+            _ => unreachable!(),
+        }
 
         assert_eq!(gb.cpu.f, flags_before, "LD (0x{:02X}) modified flags", opcode);
     }
@@ -509,11 +519,10 @@ fn test_ld_r_r_hl_as_source() {
     let regs = [Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::H, Reg8::L, Reg8::A];
     for &dest in &regs {
         let mut gb = Gameboy::new();
-        let opcode = 0x46 | ((dest as u8) << 3);
         gb.cpu.write_reg16(Reg16::HL, 0xC000);
         gb.memory.write_u8(0xC000, 0xAB);
 
-        gb.ld(opcode);
+        gb.ld_r_r(dest, Reg8::HLIndirect);
 
         assert_eq!(gb.cpu.reg8(dest), 0xAB, "LD {:?},(HL) via ld_r_r failed", dest);
     }
@@ -527,11 +536,10 @@ fn test_ld_r_r_hl_as_destination() {
     let regs = [Reg8::B, Reg8::C, Reg8::D, Reg8::E, Reg8::A];
     for &src in &regs {
         let mut gb = Gameboy::new();
-        let opcode = 0x70 | (src as u8);
         gb.cpu.write_reg16(Reg16::HL, 0xC000);
         gb.cpu.write_reg8(src, 0x5A);
 
-        gb.ld(opcode);
+        gb.ld_r_r(Reg8::HLIndirect, src);
 
         assert_eq!(gb.memory.read_u8(0xC000), 0x5A, "LD (HL),{:?} via ld_r_r failed", src);
     }
@@ -542,7 +550,7 @@ fn test_ld_hl_h() {
     // LD (HL),H = 0x74: writes H's value to address (HL) without changing H
     let mut gb = Gameboy::new();
     gb.cpu.write_reg16(Reg16::HL, 0xC000); // H=0xC0, L=0x00
-    gb.ld(0x74);
+    gb.ld_r_r(Reg8::HLIndirect, Reg8::H);
     assert_eq!(gb.memory.read_u8(0xC000), 0xC0);
     assert_eq!(gb.cpu.hl(), 0xC000, "HL must be unchanged");
 }
@@ -552,7 +560,7 @@ fn test_ld_hl_l() {
     // LD (HL),L = 0x75: writes L's value to address (HL) without changing L
     let mut gb = Gameboy::new();
     gb.cpu.write_reg16(Reg16::HL, 0xC012); // H=0xC0, L=0x12
-    gb.ld(0x75);
+    gb.ld_r_r(Reg8::HLIndirect, Reg8::L);
     assert_eq!(gb.memory.read_u8(0xC012), 0x12);
     assert_eq!(gb.cpu.hl(), 0xC012, "HL must be unchanged");
 }
@@ -569,7 +577,7 @@ fn test_ld_a_nn_little_endian() {
     gb.memory.write_u8(0x4001, 0x12); // high byte
     gb.memory.write_u8(0x1234, 0x77);
 
-    gb.ld(0xFA); // LD A,(nn)
+    gb.ld_a_nn(); // LD A,(nn)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x77);
 }
@@ -582,7 +590,7 @@ fn test_ld_nn_a_little_endian() {
     gb.memory.write_u8(0x4000, 0x50);
     gb.memory.write_u8(0x4001, 0xC1);
 
-    gb.ld(0xEA); // LD (nn),A
+    gb.ld_nn_a(); // LD (nn),A
 
     assert_eq!(gb.memory.read_u8(0xC150), 0x88);
 }
@@ -597,7 +605,7 @@ fn test_ld_a_hli_wrapping() {
     gb.cpu.write_reg16(Reg16::HL, 0xFFFF);
     gb.memory.write_u8(0xFFFF, 0x7A);
 
-    gb.ld(0x2A); // LD A,(HL+)
+    gb.ld_a_hli(); // LD A,(HL+)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x7A);
     // HL+ wraps 0xFFFF -> 0x0000
@@ -610,7 +618,7 @@ fn test_ld_a_hld_wrapping() {
     gb.cpu.write_reg16(Reg16::HL, 0x0000);
     gb.memory.write_u8(0x0000, 0x39);
 
-    gb.ld(0x3A); // LD A,(HL-)
+    gb.ld_a_hld(); // LD A,(HL-)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x39);
     // HL- wraps 0x0000 -> 0xFFFF
@@ -623,7 +631,7 @@ fn test_ld_a_hli_edge() {
     gb.cpu.write_reg16(Reg16::HL, 0xFFFF - 1);
     gb.memory.write_u8(0xFFFE, 0x7A);
 
-    gb.ld(0x2A); // LD A,(HL+)
+    gb.ld_a_hli(); // LD A,(HL+)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x7A);
     assert_eq!(gb.cpu.hl(), 0xFFFF);
@@ -635,7 +643,7 @@ fn test_ld_a_hld_edge() {
     gb.cpu.write_reg16(Reg16::HL, 0x0001);
     gb.memory.write_u8(0x0001, 0x39);
 
-    gb.ld(0x3A); // LD A,(HL-)
+    gb.ld_a_hld(); // LD A,(HL-)
 
     assert_eq!(gb.cpu.reg8(Reg8::A), 0x39);
     assert_eq!(gb.cpu.hl(), 0x0000);
@@ -651,7 +659,7 @@ fn test_ld_hli_a_uses_original_address() {
     gb.cpu.a = 0x12;
     gb.cpu.write_reg16(Reg16::HL, 0xC100);
 
-    gb.ld(0x22); // LD (HL+),A
+    gb.ld_hli_a(); // LD (HL+),A
 
     // Value must be written at ORIGINAL HL, then HL incremented
     assert_eq!(gb.memory.read_u8(0xC100), 0x12);
@@ -664,7 +672,7 @@ fn test_ld_hld_a_uses_original_address() {
     gb.cpu.a = 0x34;
     gb.cpu.write_reg16(Reg16::HL, 0xC100);
 
-    gb.ld(0x32); // LD (HL-),A
+    gb.ld_hld_a(); // LD (HL-),A
 
     assert_eq!(gb.memory.read_u8(0xC100), 0x34);
     assert_eq!(gb.cpu.hl(), 0xC0FF);
@@ -683,7 +691,7 @@ fn test_ld_hl_sp_e8_extremes() {
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0x00);
 
-        gb.ld(0xF8);
+        gb.ld_hl_sp_e8();
 
         assert_eq!(gb.cpu.hl(), 0x1234);
         assert_eq!(gb.cpu.program_counter, 1);
@@ -695,7 +703,7 @@ fn test_ld_hl_sp_e8_extremes() {
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0x7F);
 
-        gb.ld(0xF8);
+        gb.ld_hl_sp_e8();
 
         assert_eq!(gb.cpu.hl(), 0x107F);
     }
@@ -706,7 +714,7 @@ fn test_ld_hl_sp_e8_extremes() {
         gb.cpu.program_counter = 0;
         gb.memory.write_u8(0, 0x80);
 
-        gb.ld(0xF8);
+        gb.ld_hl_sp_e8();
 
         assert_eq!(gb.cpu.hl(), 0x0F80);
     }
@@ -723,7 +731,7 @@ fn test_ld_rr_nn_little_endian() {
     gb.memory.write_u8(0x4000, 0xEF); // low byte
     gb.memory.write_u8(0x4001, 0xBE); // high byte
 
-    gb.ld(0x21); // LD HL,nn
+    gb.ld_rr_nn(Reg16::HL); // LD HL,nn
 
     assert_eq!(gb.cpu.hl(), 0xBEEF);
 }

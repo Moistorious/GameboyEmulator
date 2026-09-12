@@ -1,4 +1,4 @@
-use crate::cpu::Gbz80;
+use crate::cpu::{Flag, Reg16};
 use crate::gameboy::Gameboy;
 
 impl Gameboy {
@@ -21,14 +21,8 @@ impl Gameboy {
         }
     }
 
-    pub fn add_16(&mut self, opcode: u8) {
-        let source = match opcode >> 4 {
-            0 => self.cpu.bc(),
-            1 => self.cpu.de(),
-            2 => self.cpu.hl(),
-            3=> self.cpu.stack_pointer,
-            _ => unreachable!()
-        };
+    pub fn add_hl_rr(&mut self, reg: Reg16) {
+        let source = self.cpu.reg16(reg);
         let (z,n,h,c) = self.cpu.flags_from_16bit_add(source, self.cpu.hl());
 
         self.cpu.set_hl(self.cpu.hl().wrapping_add(source));
@@ -51,10 +45,7 @@ impl Gameboy {
     }
 
     pub fn add(&mut self, opcode: u8) {
-        if opcode < 0x80 {
-            self.add_16(opcode);
-            return;
-        } else if opcode == 0xE8 {
+        if opcode == 0xE8 {
             self.add_sp();
             return;
         }
@@ -70,7 +61,7 @@ impl Gameboy {
         let val = self.get_alu_operand(opcode);
         let (z,n,h,c) = self.cpu.flags_from_adc(val, self.cpu.a);
 
-        self.cpu.a = self.cpu.a.wrapping_add(val).wrapping_add(self.cpu.get_flag(Gbz80::FLAG_C) as u8);
+        self.cpu.a = self.cpu.a.wrapping_add(val).wrapping_add(self.cpu.get_flag(Flag::C) as u8);
 
         self.cpu.set_flags(z,n,h,c);
     }
@@ -95,7 +86,7 @@ impl Gameboy {
         let (z,n,h,c) = self.cpu.flags_from_sbc(self.cpu.a, val);
 
         self.cpu.a = self.cpu.a.wrapping_sub(val)
-                        .wrapping_sub(self.cpu.get_flag(Gbz80::FLAG_C) as u8);
+                        .wrapping_sub(self.cpu.get_flag(Flag::C) as u8);
 
         self.cpu.set_flags(z,n,h,c);
     }

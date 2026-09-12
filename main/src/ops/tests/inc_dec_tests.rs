@@ -1,4 +1,4 @@
-use crate::cpu::{Reg8, Reg16, Gbz80};
+use crate::cpu::{Flag, Reg8, Reg16};
 use crate::gameboy::Gameboy;
 
 // INC r   = 0x04 + r (r = 0..7)
@@ -15,9 +15,9 @@ fn test_inc_r8() {
     gb.cpu.b = 0x0F;
     gb.inc(0x04); // INC B
     assert_eq!(gb.cpu.b, 0x10);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(!gb.cpu.get_flag(Flag::N));
+    assert!(gb.cpu.get_flag(Flag::H));
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn test_inc_all_r8() {
         gb.cpu.write_reg8(reg, 0x25);
         gb.inc(opcode);
         assert_eq!(gb.cpu.reg8(reg), 0x26, "INC {:?} failed", reg);
-        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+        assert!(!gb.cpu.get_flag(Flag::N));
     }
 }
 
@@ -39,7 +39,7 @@ fn test_inc_zero() {
     gb.cpu.b = 0xFF;
     gb.inc(0x04); // INC B -> 0x00
     assert_eq!(gb.cpu.b, 0x00);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
 }
 
 #[test]
@@ -47,9 +47,9 @@ fn test_inc_carry_untouched() {
     // 8-bit INC does not modify carry
     let mut gb = Gameboy::new();
     gb.cpu.b = 0x01;
-    gb.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb.cpu.set_flag(Flag::C, true);
     gb.inc(0x04);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -59,9 +59,9 @@ fn test_inc_hl_mem() {
     gb.memory.write_u8(0xC000, 0x50);
     gb.inc(0x34); // INC (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x51);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(!gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -91,9 +91,9 @@ fn test_dec_r8() {
     gb.cpu.b = 0x10;
     gb.dec(0x05); // DEC B
     assert_eq!(gb.cpu.b, 0x0F);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0); // half borrow
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
+    assert!(gb.cpu.get_flag(Flag::H)); // half borrow
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn test_dec_all_r8() {
         gb.cpu.write_reg8(reg, 0x26);
         gb.dec(opcode);
         assert_eq!(gb.cpu.reg8(reg), 0x25, "DEC {:?} failed", reg);
-        assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.get_flag(Flag::N));
     }
 }
 
@@ -115,8 +115,8 @@ fn test_dec_zero() {
     gb.cpu.b = 0x01;
     gb.dec(0x05); // DEC B -> 0x00
     assert_eq!(gb.cpu.b, 0x00);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -125,22 +125,22 @@ fn test_dec_half_borrow() {
     let mut gb = Gameboy::new();
     gb.cpu.b = 0x00;
     gb.dec(0x05);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 
     // 0x10 - 1 = 0x0F -> H clear
     let mut gb2 = Gameboy::new();
     gb2.cpu.b = 0x10;
     gb2.dec(0x05);
-    assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
+    assert!(!gb2.cpu.get_flag(Flag::H));
 }
 
 #[test]
 fn test_dec_carry_untouched() {
     let mut gb = Gameboy::new();
     gb.cpu.b = 0x01;
-    gb.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb.cpu.set_flag(Flag::C, true);
     gb.dec(0x05);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn test_dec_hl_mem() {
     gb.memory.write_u8(0xC000, 0x50);
     gb.dec(0x35); // DEC (HL)
     assert_eq!(gb.memory.read_u8(0xC000), 0x4F);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]

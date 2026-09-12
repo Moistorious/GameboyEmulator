@@ -1,5 +1,5 @@
 use crate::gameboy::Gameboy;
-use crate::cpu::Gbz80;
+use crate::cpu::Flag;
 
 // DAA = 0x27
 // CPL = 0x2F: A = ~A; N=1, H=1; Z,C preserved
@@ -14,9 +14,9 @@ fn test_daa_addition() {
     gb.cpu.set_flags(false, false, false, false);
     gb.daa(0x27);
     assert_eq!(gb.cpu.a, 0x42);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(!gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -27,8 +27,8 @@ fn test_daa_addition_carry() {
     gb.cpu.set_flags(false, false, false, false);
     gb.daa(0x27);
     assert_eq!(gb.cpu.a, 0x00);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -39,7 +39,7 @@ fn test_daa_subtraction() {
     gb.cpu.set_flags(false, true, true, false);
     gb.daa(0x27);
     assert_eq!(gb.cpu.a, 0x15);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -48,55 +48,55 @@ fn test_cpl() {
     gb.cpu.a = 0x35;
     gb.cpl(0x2F);
     assert_eq!(gb.cpu.a, 0xCA);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::N));
+    assert!(gb.cpu.get_flag(Flag::H));
 
     // Z and C preserved
     let mut gb2 = Gameboy::new();
-    gb2.cpu.set_flag(Gbz80::FLAG_Z, true);
-    gb2.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb2.cpu.set_flag(Flag::Z, true);
+    gb2.cpu.set_flag(Flag::C, true);
     gb2.cpl(0x2F);
-    assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb2.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb2.cpu.get_flag(Flag::Z));
+    assert!(gb2.cpu.get_flag(Flag::C));
 }
 
 #[test]
 fn test_scf() {
     let mut gb = Gameboy::new();
-    gb.cpu.set_flag(Gbz80::FLAG_C, false);
-    gb.cpu.set_flag(Gbz80::FLAG_N, true);
-    gb.cpu.set_flag(Gbz80::FLAG_H, true);
+    gb.cpu.set_flag(Flag::C, false);
+    gb.cpu.set_flag(Flag::N, true);
+    gb.cpu.set_flag(Flag::H, true);
     gb.scf(0x37);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+    assert!(gb.cpu.get_flag(Flag::C));
+    assert!(!gb.cpu.get_flag(Flag::N));
+    assert!(!gb.cpu.get_flag(Flag::H));
 
     // Z preserved
     let mut gb2 = Gameboy::new();
-    gb2.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb2.cpu.set_flag(Flag::Z, true);
     gb2.scf(0x37);
-    assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
+    assert!(gb2.cpu.get_flag(Flag::Z));
 }
 
 #[test]
 fn test_ccf() {
     let mut gb = Gameboy::new();
-    gb.cpu.set_flag(Gbz80::FLAG_C, true);
-    gb.cpu.set_flag(Gbz80::FLAG_N, true);
-    gb.cpu.set_flag(Gbz80::FLAG_H, true);
+    gb.cpu.set_flag(Flag::C, true);
+    gb.cpu.set_flag(Flag::N, true);
+    gb.cpu.set_flag(Flag::H, true);
     gb.ccf(0x3F);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
+    assert!(!gb.cpu.get_flag(Flag::C));
+    assert!(!gb.cpu.get_flag(Flag::N));
+    assert!(!gb.cpu.get_flag(Flag::H));
 
     gb.ccf(0x3F);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb.cpu.get_flag(Flag::C));
 
     // Z preserved
     let mut gb2 = Gameboy::new();
-    gb2.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb2.cpu.set_flag(Flag::Z, true);
     gb2.ccf(0x3F);
-    assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0);
+    assert!(gb2.cpu.get_flag(Flag::Z));
 }
 
 #[test]

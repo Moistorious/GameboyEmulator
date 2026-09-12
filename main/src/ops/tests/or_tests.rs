@@ -1,4 +1,4 @@
-use crate::cpu::{Reg8, Reg16, Gbz80};
+use crate::cpu::{Flag, Reg8, Reg16};
 use crate::gameboy::Gameboy;
 
 // OR A,r = 0xB0 + r
@@ -16,10 +16,10 @@ fn test_or_all_reg8() {
         gameboy.cpu.write_reg8(src, 0xF0);
         gameboy.or(opcode);
         assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xFF, "OR A,{:?} failed", src);
-        assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
-        assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
-        assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
-        assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(!gameboy.cpu.get_flag(Flag::Z));
+        assert!(!gameboy.cpu.get_flag(Flag::N));
+        assert!(!gameboy.cpu.get_flag(Flag::H));
+        assert!(!gameboy.cpu.get_flag(Flag::C));
     }
 }
 
@@ -29,7 +29,7 @@ fn test_or_a_a() {
     gameboy.cpu.write_reg8(Reg8::A, 0x01);
     gameboy.or(0xB7); // OR A,A
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0x01);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+    assert!(!gameboy.cpu.get_flag(Flag::Z));
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn test_or_a_hl() {
     gameboy.memory.write_u8(0xC000, 0xF0);
     gameboy.or(0xB6); // OR A,(HL)
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xFF);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+    assert!(!gameboy.cpu.get_flag(Flag::Z));
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn test_or_a_n8() {
     gameboy.memory.write_u8(0x00, 0xF0); // immediate
     gameboy.or(0xF6); // OR A,n
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0xFF);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_Z == 0);
+    assert!(!gameboy.cpu.get_flag(Flag::Z));
 }
 
 #[test]
@@ -60,8 +60,8 @@ fn test_or_zero_result() {
     gameboy.cpu.write_reg8(Reg8::B, 0x00);
     gameboy.or(0xB0); // OR A,B
     assert_eq!(gameboy.cpu.reg8(Reg8::A), 0x00);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gameboy.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(gameboy.cpu.get_flag(Flag::Z));
+    assert!(!gameboy.cpu.get_flag(Flag::N));
+    assert!(!gameboy.cpu.get_flag(Flag::H));
+    assert!(!gameboy.cpu.get_flag(Flag::C));
 }

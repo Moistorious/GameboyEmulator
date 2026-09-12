@@ -1,5 +1,5 @@
 use crate::gameboy::Gameboy;
-use crate::cpu::{Gbz80, Reg8};
+use crate::cpu::{Flag, Reg8};
 
 fn bit_opcode(bit: u8, reg: Reg8) -> u8 {
     0x40 | ((bit & 0x07) << 3) | (reg as u8)
@@ -13,14 +13,14 @@ fn test_bit_all_registers() {
         let mut gb = Gameboy::new();
         gb.cpu.write_reg8(reg, 0x00);
         gb.bit(bit_opcode(0, reg));
-        assert!(gb.cpu.f & Gbz80::FLAG_Z != 0, "BIT 0,{:?} (clear bit) should set Z", reg);
-        assert!(gb.cpu.f & Gbz80::FLAG_N == 0, "BIT must clear N");
-        assert!(gb.cpu.f & Gbz80::FLAG_H != 0, "BIT must set H");
+        assert!(gb.cpu.get_flag(Flag::Z), "BIT 0,{:?} (clear bit) should set Z", reg);
+        assert!(!gb.cpu.get_flag(Flag::N), "BIT must clear N");
+        assert!(gb.cpu.get_flag(Flag::H), "BIT must set H");
 
         let mut gb2 = Gameboy::new();
         gb2.cpu.write_reg8(reg, 0x01);
         gb2.bit(bit_opcode(0, reg));
-        assert!(gb2.cpu.f & Gbz80::FLAG_Z == 0, "BIT 0,{:?} (set bit) should clear Z", reg);
+        assert!(!gb2.cpu.get_flag(Flag::Z), "BIT 0,{:?} (set bit) should clear Z", reg);
     }
 }
 
@@ -30,12 +30,12 @@ fn test_bit_all_bits() {
         let mut gb = Gameboy::new();
         gb.cpu.b = 1 << bit;
         gb.bit(bit_opcode(bit, Reg8::B));
-        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0, "BIT {},B (set) should clear Z", bit);
+        assert!(!gb.cpu.get_flag(Flag::Z), "BIT {},B (set) should clear Z", bit);
 
         let mut gb2 = Gameboy::new();
         gb2.cpu.b = !(1u8 << bit);
         gb2.bit(bit_opcode(bit, Reg8::B));
-        assert!(gb2.cpu.f & Gbz80::FLAG_Z != 0, "BIT {},B (clear) should set Z", bit);
+        assert!(gb2.cpu.get_flag(Flag::Z), "BIT {},B (clear) should set Z", bit);
     }
 }
 
@@ -44,13 +44,13 @@ fn test_bit_preserves_carry() {
     // BIT sets and clears carry per spec: C is unaffected.
     let mut gb = Gameboy::new();
     gb.cpu.b = 0x01;
-    gb.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb.cpu.set_flag(Flag::C, true);
     gb.bit(bit_opcode(0, Reg8::B));
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0, "BIT must preserve C when set");
+    assert!(gb.cpu.get_flag(Flag::C), "BIT must preserve C when set");
 
-    gb.cpu.set_flag(Gbz80::FLAG_C, false);
+    gb.cpu.set_flag(Flag::C, false);
     gb.bit(bit_opcode(0, Reg8::B));
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0, "BIT must preserve C when clear");
+    assert!(!gb.cpu.get_flag(Flag::C), "BIT must preserve C when clear");
 }
 
 #[test]
@@ -60,11 +60,11 @@ fn test_bit_hl_mem() {
     gb.memory.write_u8(0xC000, 0x80);
     gb.bit(bit_opcode(7, Reg8::HLIndirect)); // BIT 7,(HL) = 0x7E? BIT b,(HL) = 0xCB low nibble 6
     // Actually BIT 7,(HL) opcode low bits are 6 (for (HL)); here we test the memory path via reg=F (6)
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
 
     gb.memory.write_u8(0xC000, 0x00);
     gb.bit(bit_opcode(7, Reg8::HLIndirect));
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
 }
 
 fn set_opcode(bit: u8, reg: Reg8) -> u8 {

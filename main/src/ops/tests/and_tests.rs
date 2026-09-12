@@ -1,4 +1,4 @@
-use crate::cpu::{Reg8, Gbz80};
+use crate::cpu::{Flag, Reg8};
 use crate::gameboy::Gameboy;
 
 // AND A,r = 0xA0 + r
@@ -15,10 +15,10 @@ fn test_and_a_r8() {
     gb.and(0xA0);
 
     assert_eq!(gb.cpu.a, 0x00);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(!gb.cpu.get_flag(Flag::N));
+    assert!(gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -33,10 +33,10 @@ fn test_and_all_r8() {
         gb.and(opcode);
 
         assert_eq!(gb.cpu.a, 0x0F, "AND A,{:?} failed", reg);
-        assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
-        assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+        assert!(!gb.cpu.get_flag(Flag::Z));
+        assert!(!gb.cpu.get_flag(Flag::N));
+        assert!(gb.cpu.get_flag(Flag::H));
+        assert!(!gb.cpu.get_flag(Flag::C));
     }
 }
 
@@ -50,7 +50,7 @@ fn test_and_a_hl_mem() {
     gb.and(0xA6);
 
     assert_eq!(gb.cpu.a, 0x0F);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_and_a_n8() {
     gb.and(0xE6);
 
     assert_eq!(gb.cpu.a, 0x0F);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 }
 
 #[test]
@@ -75,8 +75,8 @@ fn test_and_zero_result() {
     gb.and(0xA0);
 
     assert_eq!(gb.cpu.a, 0x00);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(!gb.cpu.get_flag(Flag::N));
+    assert!(gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::C));
 }

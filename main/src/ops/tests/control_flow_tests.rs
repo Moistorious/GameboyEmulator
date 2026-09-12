@@ -1,4 +1,4 @@
-use crate::cpu::Gbz80;
+use crate::cpu::Flag;
 use crate::gameboy::Gameboy;
 
 // JP nn     = 0xC3
@@ -28,7 +28,7 @@ fn test_jp_cc_nn_taken() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u16(0x100, 0x1234);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb.cpu.set_flag(Flag::Z, false);
     gb.jp(0xC2);
     assert_eq!(gb.cpu.program_counter, 0x1234);
 }
@@ -39,7 +39,7 @@ fn test_jp_cc_nn_not_taken() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u16(0x100, 0x1234);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.cpu.set_flag(Flag::Z, true);
     gb.jp(0xC2);
     assert_eq!(gb.cpu.program_counter, 0x102);
 }
@@ -50,7 +50,7 @@ fn test_jp_z_c_nc_conditions() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u16(0x100, 0x2222);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.cpu.set_flag(Flag::Z, true);
     gb.jp(0xCA);
     assert_eq!(gb.cpu.program_counter, 0x2222);
 
@@ -58,7 +58,7 @@ fn test_jp_z_c_nc_conditions() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.program_counter = 0x100;
     gb2.memory.write_u16(0x100, 0x3333);
-    gb2.cpu.set_flag(Gbz80::FLAG_C, true);
+    gb2.cpu.set_flag(Flag::C, true);
     gb2.jp(0xDA);
     assert_eq!(gb2.cpu.program_counter, 0x3333);
 
@@ -66,7 +66,7 @@ fn test_jp_z_c_nc_conditions() {
     let mut gb3 = Gameboy::new();
     gb3.cpu.program_counter = 0x100;
     gb3.memory.write_u16(0x100, 0x4444);
-    gb3.cpu.set_flag(Gbz80::FLAG_C, false);
+    gb3.cpu.set_flag(Flag::C, false);
     gb3.jp(0xD2);
     assert_eq!(gb3.cpu.program_counter, 0x4444);
 }
@@ -103,7 +103,7 @@ fn test_jr_cc_taken_and_not() {
     let mut gb = Gameboy::new();
     gb.cpu.program_counter = 0x100;
     gb.memory.write_u8(0x100, 0x03);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb.cpu.set_flag(Flag::Z, false);
     gb.jr(0x20);
     assert_eq!(gb.cpu.program_counter, 0x104);
 
@@ -111,7 +111,7 @@ fn test_jr_cc_taken_and_not() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.program_counter = 0x100;
     gb2.memory.write_u8(0x100, 0x03);
-    gb2.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb2.cpu.set_flag(Flag::Z, true);
     gb2.jr(0x20);
     assert_eq!(gb2.cpu.program_counter, 0x101);
 }
@@ -134,7 +134,7 @@ fn test_call_cc_taken() {
     gb.cpu.program_counter = 0x100;
     gb.cpu.stack_pointer = 0xFFFE;
     gb.memory.write_u16(0x100, 0x1234);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb.cpu.set_flag(Flag::Z, false);
     gb.call(0xC4); // CALL NZ
     assert_eq!(gb.cpu.program_counter, 0x1234);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFC);
@@ -146,7 +146,7 @@ fn test_call_cc_not_taken() {
     gb.cpu.program_counter = 0x100;
     gb.cpu.stack_pointer = 0xFFFE;
     gb.memory.write_u16(0x100, 0x1234);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.cpu.set_flag(Flag::Z, true);
     gb.call(0xC4); // CALL NZ
     assert_eq!(gb.cpu.program_counter, 0x102);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
@@ -168,7 +168,7 @@ fn test_ret_cc_taken_and_not() {
     let mut gb = Gameboy::new();
     gb.cpu.stack_pointer = 0xFFFC;
     gb.memory.write_u16(0xFFFC, 0x1234);
-    gb.cpu.set_flag(Gbz80::FLAG_Z, true);
+    gb.cpu.set_flag(Flag::Z, true);
     gb.ret(0xC8);
     assert_eq!(gb.cpu.program_counter, 0x1234);
     assert_eq!(gb.cpu.stack_pointer, 0xFFFE);
@@ -177,7 +177,7 @@ fn test_ret_cc_taken_and_not() {
     let mut gb2 = Gameboy::new();
     gb2.cpu.program_counter = 0x200;
     gb2.cpu.stack_pointer = 0xFFFC;
-    gb2.cpu.set_flag(Gbz80::FLAG_Z, false);
+    gb2.cpu.set_flag(Flag::Z, false);
     gb2.ret(0xC8);
     assert_eq!(gb2.cpu.program_counter, 0x200);
     assert_eq!(gb2.cpu.stack_pointer, 0xFFFC);

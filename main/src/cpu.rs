@@ -37,12 +37,22 @@ impl TryFrom<u8> for Reg8 {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
+pub enum Flag {
+    Z = 1 << 7, // Zero Flag
+    N = 1 << 6, // Subtract Flag
+    H = 1 << 5, // Half Carry Flag
+    C = 1 << 4 // Carry Flag
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+#[repr(u8)]
 pub enum Reg16 {
     BC = 0,
     DE = 2,
     HL = 4,
     AF = 6,
-}
+    SP = 8,
+} // Note that these values can't be consistently inferred from the opcode without doing a lookup
 
 pub struct Gbz80 {
     pub b: u8,
@@ -58,10 +68,10 @@ pub struct Gbz80 {
 }
 
 impl Gbz80 {
-    pub const FLAG_Z: u8 = 1 << 7; // Zero Flag
-    pub const FLAG_N: u8 = 1 << 6; // Subtract Flag
-    pub const FLAG_H: u8 = 1 << 5; // Half Carry Flag
-    pub const FLAG_C: u8 = 1 << 4; // Carry Flag
+    // pub const FLAG_Z: u8 = 1 << 7; // Zero Flag
+    // pub const FLAG_N: u8 = 1 << 6; // Subtract Flag
+    // pub const FLAG_H: u8 = 1 << 5; // Half Carry Flag
+    // pub const FLAG_C: u8 = 1 << 4; // Carry Flag
 
     pub fn new() -> Self {
         Gbz80 {
@@ -101,7 +111,7 @@ impl Gbz80 {
     }
     
     pub fn flags_from_adc(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
-        let carry = self.get_flag(Self::FLAG_C) as u8;
+        let carry = self.get_flag(Flag::C) as u8;
         (
             a.wrapping_add(b)
                 .wrapping_add(carry) == 0, // Z: Zero
@@ -121,7 +131,7 @@ impl Gbz80 {
     }
 
     pub fn flags_from_sbc(&mut self, a:u8, b:u8) -> (bool, bool, bool, bool) {
-        let carry = self.get_flag(Self::FLAG_C) as u8;
+        let carry = self.get_flag(Flag::C) as u8;
         (
             a.wrapping_sub(b)
                 .wrapping_sub(carry) == 0, // Z: Zero
@@ -132,10 +142,10 @@ impl Gbz80 {
     }
 
     pub fn set_flags(&mut self, z: bool, n: bool, h: bool, c: bool) {
-        self.set_flag(Self::FLAG_Z, z);
-        self.set_flag(Self::FLAG_N, n);
-        self.set_flag(Self::FLAG_H, h);
-        self.set_flag(Self::FLAG_C, c);
+        self.set_flag(Flag::Z, z);
+        self.set_flag(Flag::N, n);
+        self.set_flag(Flag::H, h);
+        self.set_flag(Flag::C, c);
     }
 
     pub fn bc(&self) -> u16 {
@@ -172,16 +182,16 @@ impl Gbz80 {
         self.l = value as u8;
     }
 
-    pub fn set_flag(&mut self, flag: u8, value: bool) {
+    pub fn set_flag(&mut self, flag: Flag, value: bool) {
         if value {
-            self.f |= flag;
+            self.f |= flag as u8;
         }else{
-            self.f &= !flag;
+            self.f &= !(flag as u8);
         }
     }
 
-    pub fn get_flag(&self, flag: u8) -> bool {
-        self.f & flag != 0
+    pub fn get_flag(&self, flag: Flag) -> bool {
+        self.f & (flag as u8) != 0
     }
 
     pub fn reg16(&self, reg: Reg16) -> u16 {
@@ -190,6 +200,7 @@ impl Gbz80 {
             Reg16::DE => self.de(),
             Reg16::HL => self.hl(),
             Reg16::AF => self.af(),
+            Reg16::SP => self.stack_pointer
         }
     }
 
@@ -225,6 +236,7 @@ impl Gbz80 {
             Reg16::DE => self.set_de(value),
             Reg16::HL => self.set_hl(value),
             Reg16::AF => self.set_af(value),
+            Reg16::SP => self.stack_pointer = value,
         }
     }
 

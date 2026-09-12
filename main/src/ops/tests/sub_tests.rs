@@ -1,4 +1,4 @@
-use crate::cpu::{Reg8, Gbz80};
+use crate::cpu::{Flag, Reg8};
 use crate::gameboy::Gameboy;
 
 // SUB A,r   = 0x90 + r
@@ -14,10 +14,10 @@ fn test_sub_a_r8() {
     gb.sub(0x90);
 
     assert_eq!(gb.cpu.a, 0x20);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_H == 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(!gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
+    assert!(!gb.cpu.get_flag(Flag::H));
+    assert!(!gb.cpu.get_flag(Flag::C));
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn test_sub_all_r8() {
         } else {
             assert_eq!(gb.cpu.a, 0x20, "SUB A,{:?} failed", reg);
         }
-        assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+        assert!(gb.cpu.get_flag(Flag::N));
     }
 }
 
@@ -50,7 +50,7 @@ fn test_sub_a_hl_mem() {
     gb.sub(0x96);
 
     assert_eq!(gb.cpu.a, 0x20);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_sub_a_n8() {
     gb.sub(0xD6);
 
     assert_eq!(gb.cpu.a, 0x20);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -72,8 +72,8 @@ fn test_sub_zero_flag() {
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x10;
     gb.sub(0x90);
-    assert!(gb.cpu.f & Gbz80::FLAG_Z != 0);
-    assert!(gb.cpu.f & Gbz80::FLAG_N != 0);
+    assert!(gb.cpu.get_flag(Flag::Z));
+    assert!(gb.cpu.get_flag(Flag::N));
 }
 
 #[test]
@@ -83,14 +83,14 @@ fn test_sub_half_borrow() {
     gb.cpu.a = 0x10;
     gb.cpu.b = 0x01;
     gb.sub(0x90);
-    assert!(gb.cpu.f & Gbz80::FLAG_H != 0);
+    assert!(gb.cpu.get_flag(Flag::H));
 
     // 0x11 - 0x01 = 0x10 -> H clear
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x11;
     gb2.cpu.b = 0x01;
     gb2.sub(0x90);
-    assert!(gb2.cpu.f & Gbz80::FLAG_H == 0);
+    assert!(!gb2.cpu.get_flag(Flag::H));
 }
 
 #[test]
@@ -100,12 +100,12 @@ fn test_sub_borrow() {
     gb.cpu.a = 0x00;
     gb.cpu.b = 0x01;
     gb.sub(0x90);
-    assert!(gb.cpu.f & Gbz80::FLAG_C != 0);
+    assert!(gb.cpu.get_flag(Flag::C));
 
     // 0x10 - 0x01 = 0x0F -> C clear
     let mut gb2 = Gameboy::new();
     gb2.cpu.a = 0x10;
     gb2.cpu.b = 0x01;
     gb2.sub(0x90);
-    assert!(gb2.cpu.f & Gbz80::FLAG_C == 0);
+    assert!(!gb2.cpu.get_flag(Flag::C));
 }
