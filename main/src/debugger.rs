@@ -1,6 +1,7 @@
 use eframe::{Frame, egui::{self, Ui}};
 use crate::{cpu::{Flag}, gameboy::Gameboy};
 use egui_memory_editor::MemoryEditor;
+use rfd::FileDialog;
 
 pub struct DebuggerUI {
     gameboy: Gameboy,
@@ -39,6 +40,16 @@ impl eframe::App for DebuggerUI {
                 if ui.button("⏭ Step Instruction").clicked() {
                     self.gameboy.step();
                 }
+
+                // Load BIOS / boot ROM file
+                if ui.button("📂 Load BIOS").clicked() {
+                    if let Some(path) = FileDialog::new()
+                        .add_filter("BIOS ROM", &["bin", "rom"])
+                        .pick_file()
+                    {
+                        self.gameboy.load_rom(0x00, path.to_str().unwrap_or(""));
+                    }
+                }
             });
         });
         egui::Panel::left("cpu_panel").show(ui, |ui| {
@@ -46,28 +57,59 @@ impl eframe::App for DebuggerUI {
             ui.separator();
             
             egui::Grid::new("registers_grid").num_columns(2).show(ui, |ui| {
-                ui.label("PC:"); ui.monospace(format!("0x{:04X}", self.gameboy.cpu.program_counter)); ui.end_row();
-                ui.label("SP:"); ui.monospace(format!("0x{:04X}", self.gameboy.cpu.stack_pointer)); ui.end_row();
-                ui.label("A:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.a)); ui.end_row();
-                ui.label("F:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.f)); ui.end_row();
-                ui.label("B:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.b)); ui.end_row();
-                ui.label("C:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.c)); ui.end_row();
-                ui.label("D:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.d)); ui.end_row();
-                ui.label("E:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.e)); ui.end_row();
-                ui.label("H:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.h)); ui.end_row();
-                ui.label("L:");  ui.monospace(format!("0x{:02X}", self.gameboy.cpu.l)); ui.end_row();
+                ui.label("PC:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.program_counter).hexadecimal(4, false, true));
+                ui.end_row();
+                ui.label("SP:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.stack_pointer).hexadecimal(4, false, true));
+                ui.end_row();
+                ui.label("A:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.a).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("F:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.f).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("B:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.b).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("C:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.c).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("D:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.d).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("E:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.e).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("H:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.h).hexadecimal(2, false, true));
+                ui.end_row();
+                ui.label("L:");
+                ui.add(egui::DragValue::new(&mut self.gameboy.cpu.l).hexadecimal(2, false, true));
+                ui.end_row();
             });
 
             ui.add_space(10.0);
             ui.heading("Flags");
             ui.separator();
-            ui.monospace(format!(
-                "Z: {} | N: {} | H: {} | C: {}",
-                self.gameboy.cpu.get_flag(Flag::Z) as u8,
-                self.gameboy.cpu.get_flag(Flag::N) as u8,
-                self.gameboy.cpu.get_flag(Flag::H) as u8,
-                self.gameboy.cpu.get_flag(Flag::C) as u8
-            ));
+            ui.horizontal(|ui| {
+                let mut z = self.gameboy.cpu.get_flag(Flag::Z);
+                let mut n = self.gameboy.cpu.get_flag(Flag::N);
+                let mut h = self.gameboy.cpu.get_flag(Flag::H);
+                let mut c = self.gameboy.cpu.get_flag(Flag::C);
+                if ui.checkbox(&mut z, "Z").changed() {
+                    self.gameboy.cpu.set_flag(Flag::Z, z);
+                }
+                if ui.checkbox(&mut n, "N").changed() {
+                    self.gameboy.cpu.set_flag(Flag::N, n);
+                }
+                if ui.checkbox(&mut h, "H").changed() {
+                    self.gameboy.cpu.set_flag(Flag::H, h);
+                }
+                if ui.checkbox(&mut c, "C").changed() {
+                    self.gameboy.cpu.set_flag(Flag::C, c);
+                }
+            });
         });
         egui::CentralPanel::default().show(ui, |ui| {
             ui.heading("Memory Inspector");
